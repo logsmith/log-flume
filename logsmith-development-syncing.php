@@ -52,8 +52,8 @@ class DevelopmentSyncing {
             'version'     => 'latest',
             'region'      => 'eu-west-2',
             'credentials' => [
-                'key'    => '',
-                'secret' => '',
+                'key'    => AWS_ACCESS_KEY_ID,
+                'secret' => AWS_SECRET_ACCESS_KEY,
             ],
         ]);
 
