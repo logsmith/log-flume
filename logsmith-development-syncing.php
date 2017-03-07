@@ -11,6 +11,23 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 use Aws\S3\S3Client;
 // use Aws\S3\Exception\S3Exception;
+//
+// class MyRecursiveFilterIterator extends RecursiveFilterIterator {
+//
+//     public static $FILTERS = array(
+//         '__MACOSX',
+//     );
+//
+//     public function accept() {
+//         return !in_array(
+//             $this->current()->getFilename(),
+//             self::$FILTERS,
+//             true
+//         );
+//     }
+//
+// }
+
 
 class DevelopmentSyncing {
 
@@ -31,6 +48,9 @@ class DevelopmentSyncing {
     }
 
     function admin_page() {
+
+        $ignore = array("DS_Store","git");
+
         ?>
         <div class="wrap">
         <h2>Page</h2>
@@ -64,8 +84,6 @@ class DevelopmentSyncing {
             print_r($bucket);
             echo "</pre>";
 
-
-
         }
 
         $iterator = $s3->getIterator('ListObjects', array(
@@ -80,29 +98,58 @@ class DevelopmentSyncing {
 
 
 
+        echo "<pre>";
+        $wp_upload_dir = wp_upload_dir();
+        echo "</pre>";
 
 
 
 
-            $root = 'wp-content/uploads/2017/';
 
-            $iter = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::SELF_FIRST,
-                RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
-            );
 
-            $paths = array($root);
+
+
+        echo "<hr>";
+
+        echo "<pre>";
+        print_r($ignore);
+        echo "</pre>";
+
+
+
+
+        $iter = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
+            RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+        );
+
+            $paths = array($wp_upload_dir['basedir']);
             foreach ($iter as $path => $dir) {
                 // if ($dir->isDir()) {
-                    //new to check against array of files to not sync
+
+                $filetype = pathinfo($path);
+
+
+                if (!in_array($filetype['filename'], $ignore)) {
                     $paths[] = $path;
+                    echo $path."<br><br>";
+                }
+
+                // $filetype = pathinfo($path);
+                //
+                // echo "<pre>";
+                // print_r($filetype);
+                // echo "</pre>";
+                //
+                //
+                //
+                // echo $filetype."<br><br>";
+
+
                 // }
             }
 
-            echo "<pre>";
-            print_r($paths);
-            echo "</pre>";
 
 
 
@@ -129,6 +176,8 @@ class DevelopmentSyncing {
             // http://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-transfer.html
             $source = 'wp-content/uploads/2017/';
 
+            // $filetype['filename'];
+
             $dest = 's3://atomicsmash-development/foo';
             $manager = new \Aws\S3\Transfer($s3, $source, $dest);
             $manager->transfer();
@@ -138,15 +187,9 @@ class DevelopmentSyncing {
             // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
 
 
-
-
         } catch (Aws\S3\Exception\S3Exception $e) {
             echo "There was an error uploading the file.\n $e";
         }
-
-
-
-
 
 
     }
@@ -157,10 +200,10 @@ class DevelopmentSyncing {
     }
 
 
-  function indexButton() {
-    if ( ! current_user_can( 'upload_files' ) ) return;
-    add_filter( 'esc_html', array(__CLASS__, 'h2Button'), 999, 2 );
-  }
+    function indexButton() {
+        if ( ! current_user_can( 'upload_files' ) ) return;
+        add_filter( 'esc_html', array(__CLASS__, 'h2Button'), 999, 2 );
+    }
 
     static function h2Button( $safe_text, $text ) {
         // if ( ! current_user_can( 'upload_files' ) ) return $safe_text;

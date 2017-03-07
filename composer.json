@@ -1,0 +1,21 @@
+{
+  "name": "logsmith/log-flume",
+  "description": "Atomic Smash - Atomis APIS",
+  "keywords": ["wordpress", "plugin", "dev"],
+  "homepage": "http://www.atomicsmash.co.uk/",
+  "license": "This software is NOT to be distributed, but can be INCLUDED in WP themes: Premium or Contracted.",
+  "authors": [
+    {
+      "name": "Atomic Smash",
+      "email": "mail@atomicsmash.co.uk",
+      "homepage": "https://www.atomicsmash.co.uk/"
+    }
+  ],
+  "type": "wordpress-plugin",
+  "require": {
+  },
+  "dist": {
+        "url": "",
+        "type": "tar"
+  }
+}
