@@ -53,7 +53,7 @@ class DevelopmentSyncing {
 
         ?>
         <div class="wrap">
-        <h2>Page</h2>
+        <h2>Sync media library to S3</h2>
         </div>
         <?php
 
@@ -96,26 +96,7 @@ class DevelopmentSyncing {
 
         echo "<hr>";
 
-
-
-        echo "<pre>";
         $wp_upload_dir = wp_upload_dir();
-        echo "</pre>";
-
-
-
-
-
-
-
-
-        echo "<hr>";
-
-        echo "<pre>";
-        print_r($ignore);
-        echo "</pre>";
-
-
 
 
         $iter = new RecursiveIteratorIterator(
@@ -124,17 +105,17 @@ class DevelopmentSyncing {
             RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
         );
 
-            $paths = array($wp_upload_dir['basedir']);
-            foreach ($iter as $path => $dir) {
-                // if ($dir->isDir()) {
+        $paths = array($wp_upload_dir['basedir']);
+        foreach ($iter as $path => $dir) {
+            // if ($dir->isDir()) {
 
-                $filetype = pathinfo($path);
+            $filetype = pathinfo($path);
 
-
-                if (!in_array($filetype['filename'], $ignore)) {
-                    $paths[] = $path;
-                    echo $path."<br><br>";
-                }
+            //This would be nicer to have this in the RecursiveIteratorIterator
+            if (!in_array($filetype['filename'], $ignore)) {
+                $paths[] = $path;
+                echo $path."<br><br>";
+            }
 
                 // $filetype = pathinfo($path);
                 //
@@ -148,7 +129,7 @@ class DevelopmentSyncing {
 
 
                 // }
-            }
+        }
 
 
 
@@ -174,21 +155,31 @@ class DevelopmentSyncing {
             // $s3->uploadDirectory('wp-content/uploads/2017', 'atomicsmash-development');
 
             // http://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-transfer.html
-            $source = 'wp-content/uploads/2017/';
+            // $source = 'wp-content/uploads/2017/';
 
             // $filetype['filename'];
 
-            $dest = 's3://atomicsmash-development/foo';
-            $manager = new \Aws\S3\Transfer($s3, $source, $dest);
-            $manager->transfer();
+            // echo "<pre>";
+            // print_r($wp_upload_dir);
+            // echo "</pre>";
 
-        // readDir()
+
+            echo "<pre>";
+            print_r($paths);
+            echo "</pre>";
 
             // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
 
 
+            // $dest = 's3://atomicsmash-development/test';
+            // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir'], $dest);
+            // $manager->transfer();
+
+
+
+
         } catch (Aws\S3\Exception\S3Exception $e) {
-            echo "There was an error uploading the file.\n $e";
+            echo "There was an error uploading the file.<br><br> Exception: $e";
         }
 
 
