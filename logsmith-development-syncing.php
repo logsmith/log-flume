@@ -49,7 +49,7 @@ class DevelopmentSyncing {
 
     function admin_page() {
 
-        $ignore = array("DS_Store","git");
+        $ignore = array("DS_Store");
 
         ?>
         <div class="wrap">
@@ -67,7 +67,6 @@ class DevelopmentSyncing {
         // Instantiate an Amazon S3 client.
 
 
-        // Instantiate an Amazon S3 client.
         $s3 = new S3Client([
             'version'     => 'latest',
             'region'      => 'eu-west-2',
@@ -86,15 +85,28 @@ class DevelopmentSyncing {
 
         }
 
+        echo "<hr>";
+        echo "<h3>S3 Files</h3>";
+
         $iterator = $s3->getIterator('ListObjects', array(
             'Bucket' => 'atomicsmash-development'
         ));
 
+        $found_files_remotely = array();
+
         foreach ($iterator as $object) {
-            echo $object['Key'] . "<br>";
+            // echo $object['Key'] . "<br>";
+            $found_files_remotely[] = $object['Key'];
+
         }
 
-        echo "<hr>";
+        // echo "<pre>";
+        // print_r($found_files_remotely);
+        // echo "</pre>";
+
+
+
+        // echo "<hr>";
 
         $wp_upload_dir = wp_upload_dir();
 
@@ -105,16 +117,23 @@ class DevelopmentSyncing {
             RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
         );
 
-        $paths = array($wp_upload_dir['basedir']);
+        // $paths = array($wp_upload_dir['basedir']);
+
         foreach ($iter as $path => $dir) {
             // if ($dir->isDir()) {
 
-            $filetype = pathinfo($path);
+            $filetype = pathinfo($dir);
+
+            // echo "<pre>";
+            // print_r($filetype);
+            // echo "</pre>";
+
 
             //This would be nicer to have this in the RecursiveIteratorIterator
-            if (!in_array($filetype['filename'], $ignore)) {
-                $paths[] = $path;
-                echo $path."<br><br>";
+            if (!isset($filetype['extension']) || !in_array($filetype['extension'], $ignore)) {
+                $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
+                // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
+                // echo $filetype['filename']."<br>";
             }
 
                 // $filetype = pathinfo($path);
@@ -130,6 +149,26 @@ class DevelopmentSyncing {
 
                 // }
         }
+
+        // echo "<h3>Local Files</h3>";
+        //
+        // echo "<pre>";
+        // print_r($found_files_locally);
+        // echo "</pre>";
+
+
+        echo "<h3>Files Missing locally</h3>";
+
+        echo "<pre>";
+        print_r(array_diff($found_files_remotely,$found_files_locally));
+        echo "</pre>";
+
+        echo "<h3>Files Missing remotely</h3>";
+
+
+        echo "<pre>";
+        print_r(array_diff($found_files_locally,$found_files_remotely));
+        echo "</pre>";
 
 
 
@@ -164,14 +203,11 @@ class DevelopmentSyncing {
             // echo "</pre>";
 
 
-            echo "<pre>";
-            print_r($paths);
-            echo "</pre>";
 
             // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
 
 
-            // $dest = 's3://atomicsmash-development/test';
+            $dest = 's3://atomicsmash-development';
             // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir'], $dest);
             // $manager->transfer();
 
@@ -208,7 +244,6 @@ class DevelopmentSyncing {
     }
 
 }
-
 
 
 
