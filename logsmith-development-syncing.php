@@ -130,7 +130,7 @@ class DevelopmentSyncing {
 
 
             //This would be nicer to have this in the RecursiveIteratorIterator
-            if (!isset($filetype['extension']) || !in_array($filetype['extension'], $ignore)) {
+            if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
                 $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
                 // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
                 // echo $filetype['filename']."<br>";
@@ -165,9 +165,11 @@ class DevelopmentSyncing {
 
         echo "<h3>Files Missing remotely</h3>";
 
+        $missing_remotely = array_diff($found_files_locally,$found_files_remotely);
+
 
         echo "<pre>";
-        print_r(array_diff($found_files_locally,$found_files_remotely));
+        print_r($missing_remotely);
         echo "</pre>";
 
 
@@ -206,10 +208,29 @@ class DevelopmentSyncing {
 
             // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
 
+            foreach($missing_remotely as $file){
 
-            $dest = 's3://atomicsmash-development';
-            // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir'], $dest);
-            // $manager->transfer();
+
+                echo $wp_upload_dir['basedir']."/".$file."<br>";
+                // $dest = 's3://atomicsmash-development';
+                // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir']."/".$file, $dest);
+                // $manager->transfer();
+
+                // $s3->putObject([
+                //     'Bucket' => 'atomicsmash-development',
+                //     'Key'    => $wp_upload_dir['basedir']."/".$file,
+                //     'Body'   => fopen('upload.sh', 'r'),
+                //     // 'ACL'    => 'public-read',
+                // ]);
+                $manager = $s3->putObject(array(
+                    'Bucket' => 'atomicsmash-development',
+                    'Key'    => $file,
+                    'SourceFile' => $wp_upload_dir['basedir']."/".$file
+                ));
+
+
+
+            }
 
 
 
@@ -247,4 +268,4 @@ class DevelopmentSyncing {
 
 
 
-$ui = new DevelopmentSyncing;
+$log_flume = new DevelopmentSyncing;
