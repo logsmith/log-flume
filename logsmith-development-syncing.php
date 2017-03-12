@@ -31,8 +31,6 @@ use Aws\S3\Exception\S3Exception;
 // }
 
 
-
-
 class DevelopmentSyncing {
 
 
@@ -166,7 +164,7 @@ class DevelopmentSyncing {
 
         echo "<h3>Files Missing locally</h3>";
 
-        $missing_locally = array_diff($found_files_remotely,$found_files_locally)
+        $missing_locally = array_diff($found_files_remotely,$found_files_locally);
 
         echo "<pre>";
         print_r($missing_locally);
@@ -216,6 +214,24 @@ class DevelopmentSyncing {
 
             // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
 
+
+
+
+
+            foreach($missing_locally as $file){
+
+                echo $file.'';
+
+                $result = $s3->getObject([
+                    'Bucket' => AWS_BUCKET,
+                    'Key'    => $file,
+                    'SaveAs' => $wp_upload_dir['basedir']."/".$file
+                ]);
+
+
+            }
+
+
             foreach($missing_remotely as $file){
 
 
@@ -230,7 +246,7 @@ class DevelopmentSyncing {
                 //     'Body'   => fopen('upload.sh', 'r'),
                 //     // 'ACL'    => 'public-read',
                 // ]);
-                $manager = $s3->putObject(array(
+                $result = $s3->putObject(array(
                     'Bucket' => AWS_BUCKET,
                     'Key'    => $file,
                     'SourceFile' => $wp_upload_dir['basedir']."/".$file
