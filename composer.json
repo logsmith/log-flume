@@ -1,6 +1,6 @@
 {
   "name": "logsmith/log-flume",
-  "description": "Atomic Smash - Atomis APIS",
+  "description": "Log Smith - Log Flume",
   "keywords": ["wordpress", "plugin", "dev"],
   "homepage": "http://www.atomicsmash.co.uk/",
   "license": "This software is NOT to be distributed, but can be INCLUDED in WP themes: Premium or Contracted.",
@@ -13,6 +13,7 @@
   ],
   "type": "wordpress-plugin",
   "require": {
+      "aws/aws-sdk-php"							: "dev-master"
   },
   "dist": {
         "url": "",

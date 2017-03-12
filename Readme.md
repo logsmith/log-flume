@@ -4,7 +4,9 @@ This plugin is for syncing Wordpress assets between developer machines over Amaz
 
 # Todo
 
-- Get assets to upload from S3
+Scratch this.~~
+
+- ~~Get assets to upload from S3~~
 - Get assets to download from S3
 - Get assets to sync Asynchronously
 - Create a bucket selection process
@@ -13,3 +15,6 @@ This plugin is for syncing Wordpress assets between developer machines over Amaz
 - Create a config guide is AWS creds aren't correct
 
 # Changelog
+
+= 0.0.1 =
+* 
