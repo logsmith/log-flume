@@ -13,7 +13,7 @@
   ],
   "type": "wordpress-plugin",
   "require": {
-      "aws/aws-sdk-php"							: "dev-master"
+      "aws/aws-sdk-php"							: "3.24.2"
   },
   "dist": {
         "url": "",
