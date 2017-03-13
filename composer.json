@@ -16,7 +16,7 @@
       "aws/aws-sdk-php"							: "3.24.2"
   },
   "dist": {
-        "url": "",
-        "type": "tar"
+        "url": "https://github.com/logsmith/logflume/archive/master.zip",
+        "type": "zip"
   }
 }
