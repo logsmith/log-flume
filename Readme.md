@@ -17,3 +17,18 @@ This plugin is for syncing Wordpress assets between developer machines over Amaz
 
 = 0.0.1 =
 * Got basic upload and download working with S3
+
+
+# Installation
+
+Add these constants to your wp-config.php file:
+
+- AWS_BUCKET
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+```
+define('AWS_BUCKET','xxxxxx');
+define('AWS_ACCESS_KEY_ID','xxxxxx');
+define('AWS_SECRET_ACCESS_KEY','xxxxxx');
+```
