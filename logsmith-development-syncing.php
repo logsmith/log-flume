@@ -9,8 +9,6 @@ Author URI: http://www.atomicsmash.co.uk
 */
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
-require (plugin_dir_path( __FILE__ ).'vendor/autoload.php');
-
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 //
