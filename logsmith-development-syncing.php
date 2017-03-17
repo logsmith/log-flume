@@ -31,18 +31,20 @@ use Aws\S3\Exception\S3Exception;
 
 class DevelopmentSyncing {
 
+    private $setup;
 
     function __construct() {
+
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
 
-        // AWS_BUCKET
+        $this->setup = true;
+
+
         if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "") {
             add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
-        }
-
-        // define('AWS_ACCESS_KEY_ID','');
-        // define('AWS_SECRET_ACCESS_KEY','');
+            $this->setup = false;
+        };
 
 
     }
@@ -50,25 +52,17 @@ class DevelopmentSyncing {
 
     function sample_admin_notice__success() {
 
-        echo "<div class='notice notice-error'><p>Please setup <a href='"."-"."'>Log Flume</a></p></div>";
+        echo "<div class='notice notice-error'><p>Please setup <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
 
-    }
-
-
-    static function getButtonLabel() {
-        // change here the label of your custom upload button
-        return 'Sync Media to S3';
     }
 
     static function getUrl() {
         return add_query_arg( array('page'=>'log-flume'), admin_url('upload.php') );
     }
 
-
     function submenu() {
-        add_media_page( self::getButtonLabel(), self::getButtonLabel(), 'upload_files', 'log-flume', array($this, 'admin_page') );
+        add_media_page( 'Sync Media to S3', 'Sync Media to S3', 'upload_files', 'log-flume', array($this, 'admin_page') );
     }
-
 
     function indexButton() {
         if ( ! current_user_can( 'upload_files' ) ) return;
@@ -80,7 +74,7 @@ class DevelopmentSyncing {
         if ( $text === __('Media Library') && did_action( 'all_admin_notices' ) ) {
             remove_filter( 'esc_html', array(__CLASS__, 'h2Button'), 999, 2 );
             $format = ' <a href="%s" class="add-new-h2">%s</a>';
-            $mybutton = sprintf($format, esc_url(self::getUrl()), esc_html(self::getButtonLabel()) );
+            $mybutton = sprintf($format, esc_url(self::getUrl()), 'Sync Media to S3' );
             $safe_text .= $mybutton;
         }
         return $safe_text;
@@ -96,10 +90,34 @@ class DevelopmentSyncing {
         </div>
         <?php
 
+
+
         // check user capabilities
         if ( ! current_user_can( 'manage_options' ) ) {
-        return;
+
+
+
+            return;
         }
+
+
+        if( $this->setup != true ){
+
+            echo "<h2>AWS setting missing :(</h2>";
+
+            echo "<strong>DAMN!!!</strong> Looks like you need to add these Constants to your config file.";
+
+            echo "<pre>";
+                echo "define('AWS_ACCESS_KEY_ID','')\n";
+                echo "define('AWS_SECRET_ACCESS_KEY','')";
+            echo "</pre>";
+
+
+            echo "Once these are in place, come back here to select your bucket.";
+
+
+            return;
+        };
 
         // add error/update messages
 
@@ -118,6 +136,7 @@ class DevelopmentSyncing {
     	    </form>
     		</div>
     	<?php
+
         if(isset($_GET['sync'])){
 
             // define('AWS_ACCESS_KEY_ID','');
@@ -357,9 +376,9 @@ $log_flume = new DevelopmentSyncing;
 // $args have the following keys defined: title, id, callback.
 // the values are defined at the add_settings_section() function.
 function wporg_section_developers_cb( $args ) {
- ?>
- <p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Follow the white rabbit.', 'wporg' ); ?></p>
- <?php
+    ?>
+        <p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Follow the white rabbit.', 'wporg' ); ?></p>
+    <?php
 }
 
 
@@ -367,38 +386,31 @@ function wporg_section_developers_cb( $args ) {
 
 
 
-    function display_twitter_element()
-    {
-    	?>
-        	<input type="text" name="twitter_url" id="twitter_url" value="<?php echo get_option('twitter_url'); ?>" />
-        <?php
-    }
+function display_twitter_element()
+{
+	?>
+    	<input type="text" name="twitter_url" id="twitter_url" value="<?php echo get_option('twitter_url'); ?>" />
+    <?php
+}
 
-    function display_facebook_element()
-    {
-    	?>
-        	<input type="text" name="facebook_url" id="facebook_url" value="<?php echo get_option('facebook_url'); ?>" />
-        <?php
-    }
+function display_facebook_element()
+{
+	?>
+    	<input type="text" name="facebook_url" id="facebook_url" value="<?php echo get_option('facebook_url'); ?>" />
+    <?php
+}
 
-    function display_layout_element()
-    {
-    	?>
-    		<input type="checkbox" name="theme_layout" value="1" <?php checked(1, get_option('theme_layout'), true); ?> />
-    	<?php
-    }
 
-    function display_theme_panel_fields()
-    {
-    	add_settings_section("section", "All Settings", null, "theme-options");
+function display_theme_panel_fields(){
 
-    	add_settings_field("twitter_url", "Twitter Profile Url", "display_twitter_element", "theme-options", "section");
-        add_settings_field("facebook_url", "Facebook Profile Url", "display_facebook_element", "theme-options", "section");
-        add_settings_field("theme_layout", "Do you want the layout to be responsive?", "display_layout_element", "theme-options", "section");
+	add_settings_section("section", "All Settings", null, "theme-options");
 
-        register_setting("section", "twitter_url");
-        register_setting("section", "facebook_url");
-        register_setting("section", "theme_layout");
-    }
+	add_settings_field("twitter_url", "Twitter Profile Url", "display_twitter_element", "theme-options", "section");
+    add_settings_field("facebook_url", "Facebook Profile Url", "display_facebook_element", "theme-options", "section");
 
-    add_action("admin_init", "display_theme_panel_fields");
+    register_setting("section", "twitter_url");
+    register_setting("section", "facebook_url");
+    register_setting("section", "theme_layout");
+}
+
+add_action("admin_init", "display_theme_panel_fields");
