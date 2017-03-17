@@ -3,7 +3,7 @@
 Plugin Name: Logsmith - Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files
-Version: 0.0.1
+Version: 0.0.4
 Author: Atomic Smash
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -82,11 +82,9 @@ class DevelopmentSyncing {
 
     function admin_page() {
 
-        $ignore = array("DS_Store");
-
         ?>
         <div class="wrap">
-        <h2>Sync media library to S3</h2>
+            <h2>Sync media library to S3</h2>
         </div>
         <?php
 
@@ -126,16 +124,18 @@ class DevelopmentSyncing {
         // show error/update messages
         ?>
     	    <div class="wrap">
-    	    <h1>Theme Panel</h1>
-    	    <form method="post" action="options.php">
-    	        <?php
-    	            settings_fields("section");
-    	            do_settings_sections("theme-options");
-    	            submit_button();
-    	        ?>
-    	    </form>
+        	    <form method="post" action="options.php">
+        	        <?php
+        	            settings_fields("section");
+        	            do_settings_sections("theme-options");
+        	            submit_button();
+        	        ?>
+        	    </form>
     		</div>
     	<?php
+
+        $ignore = array("DS_Store");
+
 
         if(isset($_GET['sync'])){
 
@@ -351,40 +351,6 @@ $log_flume = new DevelopmentSyncing;
 
 
 
-/**
- * @internal never define functions inside callbacks.
- * these functions could be run multiple times; this would result in a fatal error.
- */
-
-/**
- * custom option and settings
- */
-
-/**
- * register our wporg_settings_init to the admin_init action hook
- */
-// add_action( 'admin_init', 'wporg_settings_init' );
-
-/**
- * custom option and settings:
- * callback functions
- */
-
-// developers section cb
-
-// section callbacks can accept an $args parameter, which is an array.
-// $args have the following keys defined: title, id, callback.
-// the values are defined at the add_settings_section() function.
-function wporg_section_developers_cb( $args ) {
-    ?>
-        <p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Follow the white rabbit.', 'wporg' ); ?></p>
-    <?php
-}
-
-
-
-
-
 
 function display_twitter_element()
 {
@@ -393,12 +359,6 @@ function display_twitter_element()
     <?php
 }
 
-function display_facebook_element()
-{
-	?>
-    	<input type="text" name="facebook_url" id="facebook_url" value="<?php echo get_option('facebook_url'); ?>" />
-    <?php
-}
 
 
 function display_theme_panel_fields(){
@@ -406,11 +366,11 @@ function display_theme_panel_fields(){
 	add_settings_section("section", "All Settings", null, "theme-options");
 
 	add_settings_field("twitter_url", "Twitter Profile Url", "display_twitter_element", "theme-options", "section");
-    add_settings_field("facebook_url", "Facebook Profile Url", "display_facebook_element", "theme-options", "section");
+
 
     register_setting("section", "twitter_url");
     register_setting("section", "facebook_url");
-    register_setting("section", "theme_layout");
+
 }
 
 add_action("admin_init", "display_theme_panel_fields");
