@@ -36,6 +36,22 @@ class DevelopmentSyncing {
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
 
+        // AWS_BUCKET
+        if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "") {
+            add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
+        }
+
+        // define('AWS_ACCESS_KEY_ID','');
+        // define('AWS_SECRET_ACCESS_KEY','');
+
+
+    }
+
+
+    function sample_admin_notice__success() {
+
+        echo "<div class='notice notice-error'><p>Please setup <a href='"."-"."'>Log Flume</a></p></div>";
+
     }
 
 
@@ -45,12 +61,12 @@ class DevelopmentSyncing {
     }
 
     static function getUrl() {
-        return add_query_arg( array('page'=>'my-custom-upload'), admin_url('upload.php') );
+        return add_query_arg( array('page'=>'log-flume'), admin_url('upload.php') );
     }
 
 
     function submenu() {
-        add_media_page( self::getButtonLabel(), self::getButtonLabel(), 'upload_files', 'my-custom-upload', array($this, 'admin_page') );
+        add_media_page( self::getButtonLabel(), self::getButtonLabel(), 'upload_files', 'log-flume', array($this, 'admin_page') );
     }
 
 
@@ -90,10 +106,6 @@ class DevelopmentSyncing {
         // check if the user have submitted the settings
         // wordpress will add the "settings-updated" $_GET parameter to the url
         // show error/update messages
-        ?>
-
-        <?php
-
         ?>
     	    <div class="wrap">
     	    <h1>Theme Panel</h1>
