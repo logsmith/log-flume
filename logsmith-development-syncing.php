@@ -40,19 +40,17 @@ class DevelopmentSyncing {
 
         $this->setup = true;
 
-
         if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "") {
             add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
             $this->setup = false;
         };
-
 
     }
 
 
     function sample_admin_notice__success() {
 
-        echo "<div class='notice notice-error'><p>Please setup <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
+        echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
 
     }
 
@@ -117,11 +115,9 @@ class DevelopmentSyncing {
             return;
         };
 
-        // add error/update messages
 
-        // check if the user have submitted the settings
-        // wordpress will add the "settings-updated" $_GET parameter to the url
-        // show error/update messages
+        $selected_s3_bucket = get_option('logflume_s3_bucket');
+
         ?>
     	    <div class="wrap">
         	    <form method="post" action="options.php">
@@ -136,16 +132,11 @@ class DevelopmentSyncing {
 
         $ignore = array("DS_Store");
 
+        echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
 
         if(isset($_GET['sync'])){
 
-            // define('AWS_ACCESS_KEY_ID','');
-            // define('AWS_SECRET_ACCESS_KEY','');
-
-
             // Instantiate an Amazon S3 client.
-
-
             $s3 = new S3Client([
                 'version'     => 'latest',
                 'region'      => 'eu-west-2',
@@ -160,17 +151,12 @@ class DevelopmentSyncing {
 
             $result = $s3->listBuckets(array());
 
-            // echo "<pre>";
-            // print_r($result);
-            // echo "</pre>";
-
-
 
             foreach ($result['Buckets'] as $bucket) {
 
-                // echo "<pre>";
-                // print_r($bucket);
-                // echo "</pre>";
+                echo "<pre>";
+                print_r($bucket['Name']);
+                echo "</pre>";
 
             }
 
@@ -180,7 +166,7 @@ class DevelopmentSyncing {
 
 
             $iterator = $s3->getIterator('ListObjects', array(
-                'Bucket' => AWS_BUCKET
+                'Bucket' => $selected_s3_bucket
             ));
 
             $found_files_remotely = array();
@@ -262,12 +248,6 @@ class DevelopmentSyncing {
 
 
             try {
-                // $s3->putObject([
-                //     'Bucket' => AWS_BUCKET,
-                //     'Key'    => 'upload.sh',
-                //     'Body'   => fopen('upload.sh', 'r'),
-                //     // 'ACL'    => 'public-read',
-                // ]);
 
                 $keyPrefix = '';
                 $options = array(
@@ -277,8 +257,6 @@ class DevelopmentSyncing {
                 );
 
 
-                // $s3->uploadDirectory('wp-content/uploads/2017', AWS_BUCKET,$keyPrefix,$options);
-                // $s3->uploadDirectory('wp-content/uploads/2017', AWS_BUCKET);
 
                 // http://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-transfer.html
                 // $source = 'wp-content/uploads/2017/';
@@ -302,7 +280,7 @@ class DevelopmentSyncing {
                     echo $file.'';
 
                     $result = $s3->getObject([
-                        'Bucket' => AWS_BUCKET,
+                        'Bucket' => $selected_s3_bucket,
                         'Key'    => $file,
                         'SaveAs' => $wp_upload_dir['basedir']."/".$file
                     ]);
@@ -319,14 +297,8 @@ class DevelopmentSyncing {
                     // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir']."/".$file, $dest);
                     // $manager->transfer();
 
-                    // $s3->putObject([
-                    //     'Bucket' => AWS_BUCKET,
-                    //     'Key'    => $wp_upload_dir['basedir']."/".$file,
-                    //     'Body'   => fopen('upload.sh', 'r'),
-                    //     // 'ACL'    => 'public-read',
-                    // ]);
                     $result = $s3->putObject(array(
-                        'Bucket' => AWS_BUCKET,
+                        'Bucket' => $selected_s3_bucket,
                         'Key'    => $file,
                         'SourceFile' => $wp_upload_dir['basedir']."/".$file
                     ));
@@ -352,11 +324,78 @@ $log_flume = new DevelopmentSyncing;
 
 
 
-function display_twitter_element()
-{
-	?>
-    	<input type="text" name="twitter_url" id="twitter_url" value="<?php echo get_option('twitter_url'); ?>" />
-    <?php
+function display_s3_selection(){
+
+
+    $s3 = new S3Client([
+        'version'     => 'latest',
+        'region'      => 'eu-west-2',
+        'credentials' => [
+            'key'    => AWS_ACCESS_KEY_ID,
+            'secret' => AWS_SECRET_ACCESS_KEY,
+        ],
+    ]);
+
+    $result = $s3->listBuckets(array());
+
+    // $result = $client->createBucket(array(
+    //     'ACL' => 'string',
+    //     // Bucket is required
+    //     'Bucket' => 'string',
+    //     'LocationConstraint' => 'string',
+    //     'GrantFullControl' => 'string',
+    //     'GrantRead' => 'string',
+    //     'GrantReadACP' => 'string',
+    //     'GrantWrite' => 'string',
+    //     'GrantWriteACP' => 'string',
+    // ));
+
+    $new_bucket_name = 'logflume-tes2t';
+
+    // $result = $s3->doesBucketExist( 'logflume-test', boolean $accept403 = true, array $options = array() )
+    $does_bucket_exist = $s3->doesBucketExist( $new_bucket_name );
+
+
+    if( $does_bucket_exist == false ){
+
+        // Create a valid bucket and use a LocationConstraint
+        $result = $s3->createBucket(array(
+            'Bucket'             => $new_bucket_name,
+            'LocationConstraint' => 'eu-west-2',
+        ));
+
+        // echo "<pre>";
+        // print_r($result);
+        // echo "</pre>";
+        
+        echo "<h3>Bucket created</h3>";
+
+    }else{
+
+        echo "<h3>Bucket already exists</h3>";
+
+    };
+
+
+
+
+
+
+    //ASTODO this is dupe
+    $selected = get_option('logflume_s3_bucket');
+
+    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
+    foreach ($result['Buckets'] as $bucket) {
+
+        if($bucket['Name'] == $selected){
+            echo "<option selected='selected' value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+        }else{
+            echo "<option value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+        }
+
+    }
+    echo "</select>";
+
 }
 
 
@@ -365,11 +404,11 @@ function display_theme_panel_fields(){
 
 	add_settings_section("section", "All Settings", null, "theme-options");
 
-	add_settings_field("twitter_url", "Twitter Profile Url", "display_twitter_element", "theme-options", "section");
+	add_settings_field("logflume_s3_bucket", "Select bucket", "display_s3_selection", "theme-options", "section");
 
 
-    register_setting("section", "twitter_url");
-    register_setting("section", "facebook_url");
+    register_setting("section", "logflume_s3_bucket");
+
 
 }
 
