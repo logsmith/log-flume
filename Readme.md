@@ -8,21 +8,23 @@ This is not intended to be used for syncing media from Live servers to Developme
 
 - ~~Get assets to upload from S3~~
 - ~~Get assets to download from S3~~
-- Create a bucket selection process
+- ~~Create a bucket selection process~~
 - Create a bucket creation process
 - ~~Create a config guide is AWS creds aren't available~~
-- There needs to be a list of skippable/ignore files
+- There needs to be a list of skippable/ignored files
 - Create a config guide is AWS creds aren't correct
 - Get assets to sync Asynchronously
 - File table: Total count isn't working
 - File table: Pagination isn't working
+- Hide sync button if nothing is actually available to sync
+- Hide tabs that shouldn't be seen
 
 # Installation
 
-Add the plugin to your composer file:
+Add the Wordpress plugin to your composer file:
 
 ```
-composer require logsmith/logflume
+composer require logsmith/log-flume
 ```
 
 Add these constants to your wp-config.php file:
@@ -40,7 +42,7 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 = 0.0.4 =
 * Added AWS settings detection and helpers to admin page
 * Added tabbing to admin screen
-* Sorted table displaying for media once that needs syncing
+* Sorted table displaying for media that needs syncing
 
 = 0.0.3 =
 * Tetsing and debugging
