@@ -218,166 +218,143 @@ class DevelopmentSyncing {
 
         $ignore = array("DS_Store");
 
-        echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a><br><br>";
+        // Instantiate an Amazon S3 client.
+        $s3 = new S3Client([
+            'version'     => 'latest',
+            'region'      => 'eu-west-2',
+            'credentials' => [
+                'key'    => AWS_ACCESS_KEY_ID,
+                'secret' => AWS_SECRET_ACCESS_KEY,
+            ],
+        ]);
 
-        if(isset($_GET['sync'])){
 
-            // Instantiate an Amazon S3 client.
-            $s3 = new S3Client([
-                'version'     => 'latest',
-                'region'      => 'eu-west-2',
-                'credentials' => [
-                    'key'    => AWS_ACCESS_KEY_ID,
-                    'secret' => AWS_SECRET_ACCESS_KEY,
-                ],
-            ]);
+        $iterator = $s3->getIterator('ListObjects', array(
+            'Bucket' => $selected_s3_bucket
+        ));
 
-            echo "<hr>";
+        $found_files_remotely = array();
 
-            $iterator = $s3->getIterator('ListObjects', array(
-                'Bucket' => $selected_s3_bucket
-            ));
+        foreach ($iterator as $object) {
+            // echo $object['Key'] . "<br>";
+            $found_files_remotely[] = $object['Key'];
 
-            $found_files_remotely = array();
+        }
 
-            foreach ($iterator as $object) {
-                // echo $object['Key'] . "<br>";
-                $found_files_remotely[] = $object['Key'];
+        $wp_upload_dir = wp_upload_dir();
 
+        $iter = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
+            RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+        );
+
+        // $paths = array($wp_upload_dir['basedir']);
+
+        foreach ($iter as $path => $dir) {
+            // if ($dir->isDir()) {
+
+            $filetype = pathinfo($dir);
+
+
+
+            //This would be nicer to have this in the RecursiveIteratorIterator
+            if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
+                $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
+                // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
+                // echo $filetype['filename']."<br>";
             }
 
-            $wp_upload_dir = wp_upload_dir();
+                // $filetype = pathinfo($path);
+                //
+                // echo "<pre>";
+                // print_r($filetype);
+                // echo "</pre>";
 
-            $iter = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::SELF_FIRST,
-                RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
-            );
-
-            // $paths = array($wp_upload_dir['basedir']);
-
-            foreach ($iter as $path => $dir) {
-                // if ($dir->isDir()) {
-
-                $filetype = pathinfo($dir);
+                // echo $filetype."<br><br>";
 
 
-
-                //This would be nicer to have this in the RecursiveIteratorIterator
-                if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
-                    $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
-                    // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
-                    // echo $filetype['filename']."<br>";
-                }
-
-                    // $filetype = pathinfo($path);
-                    //
-                    // echo "<pre>";
-                    // print_r($filetype);
-                    // echo "</pre>";
-
-                    // echo $filetype."<br><br>";
+                // }
+        }
 
 
-                    // }
+        $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
+
+        $missing_display = array();
+
+        if( count( $missing_locally ) > 0 ){
+            foreach( $missing_locally as $missing_file ){
+                $missing_display[] = array(
+                    'file' => $missing_file,
+                    'location' => 'remote'
+                );
             }
+        }
 
 
-            $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
 
-            $missing_display = array();
+        $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
 
-            if( count( $missing_locally ) > 0 ){
-                foreach( $missing_locally as $missing_file ){
-                    $missing_display[] = array(
-                        'file' => $missing_file,
-                        'location' => 'local'
-                    );
-                }
+
+        if( count( $missing_remotely ) > 0 ){
+            foreach( $missing_remotely as $missing_file ){
+                $missing_display[] = array(
+                    'file' => $missing_file,
+                    'location' => 'local'
+                );
             }
+        }
 
-
-
-            $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
-
-
-            if( count( $missing_remotely ) > 0 ){
-                foreach( $missing_remotely as $missing_file ){
-                    $missing_display[] = array(
-                        'file' => $missing_file,
-                        'location' => 'remote'
-                    );
-                }
-            }
-
-            ?>
-            <div id="poststuff">
-				<div id="post-body" class="metabox-holder columns-3">
-					<div id="post-body-content">
-						<div class="meta-box-sortables ui-sortable">
-							<form method="post">
-								<?php
-								$this->entry_obj->prepare_items($missing_display);
-								$this->entry_obj->display(); ?>
-							</form>
-						</div>
+        ?>
+        <div id="poststuff">
+			<div id="post-body" class="metabox-holder columns-3">
+				<div id="post-body-content">
+					<div class="meta-box-sortables ui-sortable">
+						<form method="post">
+							<?php
+							$this->entry_obj->prepare_items($missing_display);
+							$this->entry_obj->display(); ?>
+						</form>
 					</div>
 				</div>
-				<br class="clear">
 			</div>
-            <?php
+			<br class="clear">
+		</div>
+        <?php
 
-            try {
-
-                $keyPrefix = '';
-                $options = array(
-                    // 'params'      => array('ACL' => 'public-read'),
-                    'concurrency' => 20,
-                    'debug'       => true
-                );
+		echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a><br><br>";
 
 
+		if(isset($_GET['sync'])){
 
-                // http://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-transfer.html
-                // $source = 'wp-content/uploads/2017/';
+	        try {
 
-                // $filetype['filename'];
+	            $keyPrefix = '';
+	            $options = array(
+	                // 'params'      => array('ACL' => 'public-read'),
+	                'concurrency' => 20,
+	                'debug'       => true
+	            );
 
-
-
-                // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
-
-
-
-
-                //ASTODO possibly KILL
+				// Download missing files
                 foreach($missing_locally as $file){
 
-                    // echo $file.'';
-
-                    // $result = $s3->getObject([
-                    //     'Bucket' => $selected_s3_bucket,
-                    //     'Key'    => $file,
-                    //     'SaveAs' => $wp_upload_dir['basedir']."/".$file
-                    // ]);
-
+                    $result = $s3->getObject([
+                        'Bucket' => $selected_s3_bucket,
+                        'Key'    => $file,
+                        'SaveAs' => $wp_upload_dir['basedir']."/".$file
+                    ]);
 
                 }
 
-                //ASTODO possibly KILL
+				// Upload missing files
                 foreach($missing_remotely as $file){
 
-
-                    // echo $wp_upload_dir['basedir']."/".$file."<br>";
-                    // $dest = 's3://';
-                    // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir']."/".$file, $dest);
-                    // $manager->transfer();
-
-                    // $result = $s3->putObject(array(
-                    //     'Bucket' => $selected_s3_bucket,
-                    //     'Key'    => $file,
-                    //     'SourceFile' => $wp_upload_dir['basedir']."/".$file
-                    // ));
+                    $result = $s3->putObject(array(
+                        'Bucket' => $selected_s3_bucket,
+                        'Key'    => $file,
+                        'SourceFile' => $wp_upload_dir['basedir']."/".$file
+                    ));
 
                 }
 
@@ -439,7 +416,7 @@ class Media_List extends WP_List_Table {
 	public function column_default( $item, $column_name ) {
         switch( $column_name ) {
 			case 'location':
-                if( $item == "remote" ){
+                if( $item['location'] == "remote" ){
                     return "<span class='dashicons dashicons-cloud'></span>";
                 };
                 return "<span class='dashicons dashicons-admin-home'></span>";

@@ -14,6 +14,8 @@ This is not intended to be used for syncing media from Live servers to Developme
 - There needs to be a list of skippable/ignore files
 - Create a config guide is AWS creds aren't correct
 - Get assets to sync Asynchronously
+- File table: Total count isn't working
+- File table: Pagination isn't working
 
 # Installation
 
