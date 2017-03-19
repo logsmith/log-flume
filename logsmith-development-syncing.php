@@ -87,7 +87,6 @@ class DevelopmentSyncing {
         <?php
 
 
-
         // check user capabilities
         if ( ! current_user_can( 'manage_options' ) ) {
 
@@ -115,6 +114,18 @@ class DevelopmentSyncing {
             return;
         };
 
+        ?>
+        <h2 class="nav-tab-wrapper">
+            <a href="#" class="nav-tab nav-tab-active">Display Options</a>
+            <a href="#" class="nav-tab">Social Options</a>
+        </h2>
+        <ul class="subsubsub">
+        	<li class="all"><a href="edit.php?post_type=post">All <span class="count">(2)</span></a> |</li>
+        	<li class="publish"><a href="edit.php?post_status=publish&amp;post_type=post" class="current">Published <span class="count">(2)</span></a></li>
+        </ul>
+
+        <?php
+
 
         $selected_s3_bucket = get_option('logflume_s3_bucket');
 
@@ -127,6 +138,15 @@ class DevelopmentSyncing {
         	            submit_button();
         	        ?>
         	    </form>
+
+                <!-- <h1>Create a bucket</h1>
+
+                <form method="POST">
+                    <label for="awesome_text">Awesome Text</label>
+                    <input type="text" name="awesome_text" id="awesome_text" value="">
+                    <input type="submit" value="Save" class="button button-primary button-large">
+                </form> -->
+
     		</div>
     	<?php
 
@@ -148,21 +168,8 @@ class DevelopmentSyncing {
 
 
 
-
-            $result = $s3->listBuckets(array());
-
-
-            foreach ($result['Buckets'] as $bucket) {
-
-                echo "<pre>";
-                print_r($bucket['Name']);
-                echo "</pre>";
-
-            }
-
             echo "<hr>";
             echo "<h3>S3 Files</h3>";
-
 
 
             $iterator = $s3->getIterator('ListObjects', array(
@@ -326,6 +333,11 @@ $log_flume = new DevelopmentSyncing;
 
 function display_s3_selection(){
 
+    // echo "<pre>";
+    // print_r($_POST);
+    // echo "</pre>";
+
+
 
     $s3 = new S3Client([
         'version'     => 'latest',
@@ -338,44 +350,28 @@ function display_s3_selection(){
 
     $result = $s3->listBuckets(array());
 
-    // $result = $client->createBucket(array(
-    //     'ACL' => 'string',
-    //     // Bucket is required
-    //     'Bucket' => 'string',
-    //     'LocationConstraint' => 'string',
-    //     'GrantFullControl' => 'string',
-    //     'GrantRead' => 'string',
-    //     'GrantReadACP' => 'string',
-    //     'GrantWrite' => 'string',
-    //     'GrantWriteACP' => 'string',
-    // ));
 
-    $new_bucket_name = 'logflume-tes2t';
-
-    // $result = $s3->doesBucketExist( 'logflume-test', boolean $accept403 = true, array $options = array() )
-    $does_bucket_exist = $s3->doesBucketExist( $new_bucket_name );
-
-
-    if( $does_bucket_exist == false ){
-
-        // Create a valid bucket and use a LocationConstraint
-        $result = $s3->createBucket(array(
-            'Bucket'             => $new_bucket_name,
-            'LocationConstraint' => 'eu-west-2',
-        ));
-
-        // echo "<pre>";
-        // print_r($result);
-        // echo "</pre>";
-        
-        echo "<h3>Bucket created</h3>";
-
-    }else{
-
-        echo "<h3>Bucket already exists</h3>";
-
-    };
-
+    // $new_bucket_name = 'logflume-tes2t';
+    //
+    // $does_bucket_exist = $s3->doesBucketExist( $new_bucket_name );
+    //
+    //
+    // if( $does_bucket_exist == false ){
+    //
+    //     // Create a valid bucket and use a LocationConstraint
+    //     $result = $s3->createBucket(array(
+    //         'Bucket'             => $new_bucket_name,
+    //         'LocationConstraint' => 'eu-west-2',
+    //     ));
+    //
+    //     echo "<h3>Bucket created</h3>";
+    //
+    // }else{
+    //
+    //     echo "<h3>Bucket already exists</h3>";
+    //
+    // };
+    //
 
 
 
@@ -396,19 +392,18 @@ function display_s3_selection(){
     }
     echo "</select>";
 
-}
 
+
+}
 
 
 function display_theme_panel_fields(){
 
-	add_settings_section("section", "All Settings", null, "theme-options");
+	add_settings_section("section", "", null, "theme-options");
 
 	add_settings_field("logflume_s3_bucket", "Select bucket", "display_s3_selection", "theme-options", "section");
 
-
     register_setting("section", "logflume_s3_bucket");
-
 
 }
 
