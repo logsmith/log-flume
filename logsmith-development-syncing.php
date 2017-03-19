@@ -28,6 +28,10 @@ use Aws\S3\Exception\S3Exception;
 //
 // }
 
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+
 
 class DevelopmentSyncing {
 
@@ -93,6 +97,11 @@ class DevelopmentSyncing {
             <h2>Sync media library to S3</h2>
         </div>
         <?php
+
+        $entry_obj = new Media_List();
+
+        $entry_obj->prepare_items();
+        $entry_obj->display();
 
 
         // check user capabilities
@@ -166,6 +175,44 @@ class DevelopmentSyncing {
         $ignore = array("DS_Store");
 
         echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
+
+        ?>
+        <!-- <div class="wrap">
+
+        <table class="wp-list-table widefat fixed striped media">
+        	<thead>
+            	<tr>
+                    <th scope="col" id="title" class="manage-column">
+                        <span>File</span>
+                    </th>
+                    <th scope="col" id="author" class="manage-column">
+                            <span>Author</span>
+                    </th>
+                    <th scope="col" id="parent" class="manage-column column-parent sortable desc"><a href="http://wordpress.dev/wp-admin/upload.php?orderby=parent&amp;order=asc"><span>Uploaded to</span><span class="sorting-indicator"></span></a></th>
+                    <th scope="col" id="comments" class="manage-column column-comments num sortable desc"><a href="http://wordpress.dev/wp-admin/upload.php?orderby=comment_count&amp;order=asc"><span><span class="vers comment-grey-bubble" title="Comments"><span class="screen-reader-text">Comments</span></span></span><span class="sorting-indicator"></span></a></th><th scope="col" id="date" class="manage-column column-date sortable asc"><a href="http://wordpress.dev/wp-admin/upload.php?orderby=date&amp;order=desc"><span>Date</span><span class="sorting-indicator"></span></a>
+                    </th>
+                </tr>
+        	</thead>
+
+        	<tbody id="the-list">
+        		<tr id="post-57" class="author-self status-inherit">
+                    <td class="title column-title has-row-actions column-primary" data-colname="File">
+                        <strong class="has-media-icon">
+        			        <a href="http://wordpress.dev/wp-admin/post.php?post=57&amp;action=edit" aria-label="“computer-hard-drive” (Edit)">				<span class="media-icon image-icon"><img width="60" height="60" src="http://wordpress.dev/wp-content/uploads/2017/03/computer-hard-drive-150x150.jpg" class="attachment-60x60 size-60x60" alt=""></span>
+        			computer-hard-drive
+                            </a>
+                        </strong>
+            		<p class="filename">
+        			<span class="screen-reader-text">File name: </span>
+        			computer-hard-drive.jpg		</p>
+        		<div class="row-actions"><span class="edit"><a href="http://wordpress.dev/wp-admin/post.php?post=57&amp;action=edit" aria-label="Edit “computer-hard-drive”">Edit</a> | </span><span class="delete"><a href="post.php?action=delete&amp;post=57&amp;_wpnonce=a3f242382f" class="submitdelete aria-button-if-js" onclick="return showNotice.warn();" aria-label="Delete “computer-hard-drive” permanently" role="button">Delete Permanently</a> | </span><span class="view"><a href="http://wordpress.dev/?attachment_id=57" aria-label="View “computer-hard-drive”" rel="permalink">View</a></span></div><button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td><td class="author column-author" data-colname="Author"><a href="upload.php?author=1">David</a></td><td class="parent column-parent" data-colname="Uploaded to">(Unattached)			<br><a href="#the-list" onclick="findPosts.open( 'media[]', '57' ); return false;" class="hide-if-no-js aria-button-if-js" aria-label="Attach “computer-hard-drive” to existing content" role="button">Attach</a></td><td class="comments column-comments" data-colname="Comments"><div class="post-com-count-wrapper"><span aria-hidden="true">—</span><span class="screen-reader-text">No comments</span><span class="post-com-count post-com-count-pending post-com-count-no-pending"><span class="comment-count comment-count-no-pending" aria-hidden="true">0</span><span class="screen-reader-text">No comments</span></span></div></td><td class="date column-date" data-colname="Date">2017/03/03</td>
+                </tr>
+        	</tbody>
+
+
+        </table>
+    </div> -->
+        <?php
 
         if(isset($_GET['sync'])){
 
@@ -421,3 +468,141 @@ function display_theme_panel_fields(){
 }
 
 add_action("admin_init", "display_theme_panel_fields");
+
+
+
+
+class Media_List extends WP_List_Table {
+
+	/** Class constructor */
+	public function __construct() {
+
+		parent::__construct( [
+			'singular' => __( 'Tweet', 'sp' ), //singular name of the listed records
+			'plural'   => __( 'Tweets', 'sp' ), //plural name of the listed records
+			'ajax'     => false //does this table support ajax?
+		] );
+
+	}
+
+
+	public static function get_entries( $per_page = 20, $page_number = 1 ) {
+
+		global $twitter_api;
+
+		$result = $twitter_api->entries($per_page,$page_number);
+		// $result = parent::tweets($per_page,$page_number);
+		// parent::__construct( [
+
+		return $result;
+
+		// global $wpdb;
+		//
+		// $sql = "SELECT * FROM {$wpdb->prefix}api_twitter";
+		//
+		// if ( ! empty( $_REQUEST['orderby'] ) ) {
+		// 	$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
+		// 	$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' DESC';
+		// }else{
+		// 	$sql .= " ORDER BY `id` DESC";
+		// }
+		//
+		//
+		// $sql .= " LIMIT $per_page";
+		// $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
+		//
+		//
+		// $result = $wpdb->get_results( $sql, 'ARRAY_A' );
+		//
+		// return $result;
+	}
+
+
+	/**
+	 * Returns the count of records in the database.
+	 *
+	 * @return null|string
+	 */
+	public static function record_count() {
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}api_twitter";
+
+		return $wpdb->get_var( $sql );
+	}
+
+
+	/** Text displayed when no data is available */
+	public function no_items() {
+		_e( 'No entries avaliable.', 'sp' );
+	}
+
+
+	/**
+	 * Render a column when no column specific method exist.
+	 *
+	 * @param array $item
+	 * @param string $column_name
+	 *
+	 * @return mixed
+	 */
+	public function column_default( $item, $column_name ) {
+        switch( $column_name ) {
+			// case 'tweet':
+            // case 'added_at':
+            // case 'user_location':
+            // return $item[ $column_name ];
+			case 'created_at':
+				// echo $item[ $column_name ];
+				return time_elapsed_string($item[ $column_name ]);
+			case 'user_image':
+				return "<img src='".$item[ $column_name ]."' />";
+			case 'user_handle':
+				return "@".$item[ $column_name ];
+	        default:
+	            return $item[ $column_name ]; //Show the whole array for troubleshooting purposes
+        }
+	}
+
+
+
+
+	/**
+	 *  Associative array of columns
+	 *
+	 * @return array
+	 */
+	function get_columns() {
+		$columns = array(
+            'tweet'    => 'Tweets',
+            // 'user_handle'      => 'Username',
+            // 'user_image'      => 'Profile Image',
+            'created_at'      => 'When'
+        );
+
+		return $columns;
+	}
+
+
+	/**
+	 * Handles data query and filter, sorting, and pagination.
+	 */
+	public function prepare_items() {
+
+		$this->_column_headers = $this->get_column_info();
+
+		$per_page     = $this->get_items_per_page( 'entries_per_page', 20 );
+		$current_page = $this->get_pagenum();
+		// $total_items  = self::record_count();
+		$total_items  = 30;
+
+		$this->set_pagination_args( [
+			'total_items' => $total_items, //WE have to calculate the total number of items
+			'per_page'    => $per_page //WE have to determine how many items to show on a page
+		] );
+
+		$this->items = self::get_entries( $per_page, $current_page );
+	}
+
+
+}
