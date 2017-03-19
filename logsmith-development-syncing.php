@@ -27,12 +27,14 @@ class DevelopmentSyncing {
 
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
-        add_action( 'admin_enqueue_scripts', array($this, 'tabs') );
+        add_action( 'admin_enqueue_scripts', array($this, 'tabs_js') );
 
         $this->setup = true;
 
         if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "") {
-            add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
+            add_action( 'admin_notices', function(){
+				echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
+			} );
             $this->setup = false;
         };
 
@@ -42,14 +44,11 @@ class DevelopmentSyncing {
     }
 
 
-    function tabs() {
+    function tabs_js() {
         wp_enqueue_script( 'welcome_screen_js', plugin_dir_url( __FILE__ ) . '/script.js', array( 'jquery' ), '1.0.0', true );
     }
 
-    function sample_admin_notice__success() {
-        echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
-    }
-
+	//ASTODO - pretty this doesn't need to be a function
     static function getUrl() {
         return add_query_arg( array('page'=>'log-flume'), admin_url('upload.php') );
     }
@@ -58,9 +57,9 @@ class DevelopmentSyncing {
         $hook = add_media_page( 'Sync Media to S3', 'Sync Media to S3', 'upload_files', 'log-flume', array($this, 'admin_page') );
 
         add_action( "load-$hook", array( $this, 'screen_option' ));
-
     }
 
+	//ASTODO - pretty this doesn't need to be a function
     function indexButton() {
         if ( ! current_user_can( 'upload_files' ) ) return;
         add_filter( 'esc_html', array(__CLASS__, 'h2Button'), 999, 2 );
@@ -212,29 +211,10 @@ class DevelopmentSyncing {
 
         <?php
 
+		echo "<div class='wrap section'>";
 
         $selected_s3_bucket = get_option('logflume_s3_bucket');
 
-        ?>
-    	    <div class="wrap">
-        	    <form method="post" action="options.php">
-        	        <?php
-        	            settings_fields("section");
-        	            do_settings_sections("theme-options");
-        	            submit_button();
-        	        ?>
-        	    </form>
-
-                <!-- <h1>Create a bucket</h1>
-
-                <form method="POST">
-                    <label for="awesome_text">Awesome Text</label>
-                    <input type="text" name="awesome_text" id="awesome_text" value="">
-                    <input type="submit" value="Save" class="button button-primary button-large">
-                </form> -->
-
-    		</div>
-    	<?php
 
         $ignore = array("DS_Store");
 
@@ -407,6 +387,29 @@ class DevelopmentSyncing {
                 echo "There was an error uploading the file.<br><br> Exception: $e";
             }
         }
+		echo "</div>";
+
+		?>
+			<div class="wrap section">
+				<form method="post" action="options.php">
+					<?php
+						settings_fields("section");
+						do_settings_sections("theme-options");
+						submit_button();
+					?>
+				</form>
+
+				<!-- <h1>Create a bucket</h1>
+
+				<form method="POST">
+					<label for="awesome_text">Awesome Text</label>
+					<input type="text" name="awesome_text" id="awesome_text" value="">
+					<input type="submit" value="Save" class="button button-primary button-large">
+				</form> -->
+
+			</div>
+		<?php
+
     }
 
 
