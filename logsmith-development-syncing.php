@@ -35,6 +35,10 @@ class DevelopmentSyncing {
             add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
             $this->setup = false;
         };
+
+        add_action("admin_init", array($this, 'display_theme_panel_fields' ));
+
+
     }
 
 
@@ -72,6 +76,78 @@ class DevelopmentSyncing {
         }
         return $safe_text;
     }
+
+
+    public function display_theme_panel_fields(){
+
+    	add_settings_section("section", "", null, "theme-options");
+
+    	add_settings_field("logflume_s3_bucket", "Select bucket", array( $this, "display_s3_selection" ), "theme-options", "section");
+
+        register_setting("section", "logflume_s3_bucket");
+
+    }
+
+	function display_s3_selection(){
+
+
+
+	    $s3 = new S3Client([
+	        'version'     => 'latest',
+	        'region'      => 'eu-west-2',
+	        'credentials' => [
+	            'key'    => AWS_ACCESS_KEY_ID,
+	            'secret' => AWS_SECRET_ACCESS_KEY,
+	        ],
+	    ]);
+
+	    $result = $s3->listBuckets(array());
+
+
+	    // $new_bucket_name = 'logflume-tes2t';
+	    //
+	    // $does_bucket_exist = $s3->doesBucketExist( $new_bucket_name );
+	    //
+	    //
+	    // if( $does_bucket_exist == false ){
+	    //
+	    //     // Create a valid bucket and use a LocationConstraint
+	    //     $result = $s3->createBucket(array(
+	    //         'Bucket'             => $new_bucket_name,
+	    //         'LocationConstraint' => 'eu-west-2',
+	    //     ));
+	    //
+	    //     echo "<h3>Bucket created</h3>";
+	    //
+	    // }else{
+	    //
+	    //     echo "<h3>Bucket already exists</h3>";
+	    //
+	    // };
+	    //
+
+
+
+
+
+	    //ASTODO this is dupe
+	    $selected = get_option('logflume_s3_bucket');
+
+	    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
+	    foreach ($result['Buckets'] as $bucket) {
+
+	        if($bucket['Name'] == $selected){
+	            echo "<option selected='selected' value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+	        }else{
+	            echo "<option value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+	        }
+
+	    }
+	    echo "</select>";
+
+
+
+	}
 
     public function screen_option() {
 
@@ -336,87 +412,7 @@ class DevelopmentSyncing {
 
 }
 
-
-
 $log_flume = new DevelopmentSyncing;
-
-
-//ASTODO get these functions in the the main class
-function display_s3_selection(){
-
-
-
-    $s3 = new S3Client([
-        'version'     => 'latest',
-        'region'      => 'eu-west-2',
-        'credentials' => [
-            'key'    => AWS_ACCESS_KEY_ID,
-            'secret' => AWS_SECRET_ACCESS_KEY,
-        ],
-    ]);
-
-    $result = $s3->listBuckets(array());
-
-
-    // $new_bucket_name = 'logflume-tes2t';
-    //
-    // $does_bucket_exist = $s3->doesBucketExist( $new_bucket_name );
-    //
-    //
-    // if( $does_bucket_exist == false ){
-    //
-    //     // Create a valid bucket and use a LocationConstraint
-    //     $result = $s3->createBucket(array(
-    //         'Bucket'             => $new_bucket_name,
-    //         'LocationConstraint' => 'eu-west-2',
-    //     ));
-    //
-    //     echo "<h3>Bucket created</h3>";
-    //
-    // }else{
-    //
-    //     echo "<h3>Bucket already exists</h3>";
-    //
-    // };
-    //
-
-
-
-
-
-    //ASTODO this is dupe
-    $selected = get_option('logflume_s3_bucket');
-
-    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
-    foreach ($result['Buckets'] as $bucket) {
-
-        if($bucket['Name'] == $selected){
-            echo "<option selected='selected' value='".$bucket['Name']."'>".$bucket['Name']."</option>";
-        }else{
-            echo "<option value='".$bucket['Name']."'>".$bucket['Name']."</option>";
-        }
-
-    }
-    echo "</select>";
-
-
-
-}
-
-
-function display_theme_panel_fields(){
-
-	add_settings_section("section", "", null, "theme-options");
-
-	add_settings_field("logflume_s3_bucket", "Select bucket", "display_s3_selection", "theme-options", "section");
-
-    register_setting("section", "logflume_s3_bucket");
-
-}
-
-add_action("admin_init", "display_theme_panel_fields");
-
-
 
 
 class Media_List extends WP_List_Table {
