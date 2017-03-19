@@ -35,21 +35,15 @@ class DevelopmentSyncing {
             add_action( 'admin_notices', array($this, 'sample_admin_notice__success') );
             $this->setup = false;
         };
-
-
-
     }
 
 
     function tabs() {
-
         wp_enqueue_script( 'welcome_screen_js', plugin_dir_url( __FILE__ ) . '/script.js', array( 'jquery' ), '1.0.0', true );
-
     }
+
     function sample_admin_notice__success() {
-
         echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
-
     }
 
     static function getUrl() {
@@ -90,7 +84,7 @@ class DevelopmentSyncing {
 
 		add_screen_option( $option, $args );
 
-		$this->entry_obj = new API_List();
+		$this->entry_obj = new Media_List();
 	}
 
     function admin_page() {
@@ -168,8 +162,7 @@ class DevelopmentSyncing {
 
         $ignore = array("DS_Store");
 
-        echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
-
+        echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a><br><br>";
 
         if(isset($_GET['sync'])){
 
@@ -183,11 +176,7 @@ class DevelopmentSyncing {
                 ],
             ]);
 
-
-
             echo "<hr>";
-            echo "<h3>S3 Files</h3>";
-
 
             $iterator = $s3->getIterator('ListObjects', array(
                 'Bucket' => $selected_s3_bucket
@@ -200,10 +189,6 @@ class DevelopmentSyncing {
                 $found_files_remotely[] = $object['Key'];
 
             }
-
-            // echo "<pre>";
-            // print_r($found_files_remotely);
-            // echo "</pre>";
 
             $wp_upload_dir = wp_upload_dir();
 
@@ -220,9 +205,6 @@ class DevelopmentSyncing {
 
                 $filetype = pathinfo($dir);
 
-                // echo "<pre>";
-                // print_r($filetype);
-                // echo "</pre>";
 
 
                 //This would be nicer to have this in the RecursiveIteratorIterator
@@ -244,21 +226,8 @@ class DevelopmentSyncing {
                     // }
             }
 
-            // echo "<h3>Local Files</h3>";
-            //
-            // echo "<pre>";
-            // print_r($found_files_locally);
-            // echo "</pre>";
-
-
-            echo "<h3>Files Missing locally</h3>";
 
             $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
-
-            echo "<pre>";
-            print_r($missing_locally);
-            echo "</pre>";
-
 
             $missing_display = array();
 
@@ -271,33 +240,9 @@ class DevelopmentSyncing {
                 }
             }
 
-            echo "<pre>";
-            print_r($missing_display);
-            echo "</pre>";
 
-
-
-            echo "<h3>Files Missing remotely</h3>";
 
             $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
-
-            echo "<pre>";
-            print_r($missing_remotely);
-            echo "</pre>";
-
-            $entry_obj = new Media_List();
-
-            // $testing_array[0] = array(
-            //     // array(
-            //         'id' => 2818,
-            //         'created_at' => 'asdasda',
-            //         'tweet' => 'asdasda'
-            //     // )
-            // );
-            //
-            // echo "<pre>";
-            // print_r($testing_array);
-            // echo "</pre>";
 
 
             if( count( $missing_remotely ) > 0 ){
@@ -309,32 +254,6 @@ class DevelopmentSyncing {
                 }
             }
 
-            echo "<pre>";
-            print_r($missing_display);
-            echo "</pre>";
-
-
-            // Array
-            // (
-            //     [0] => Array
-            //         (
-            //             [id] => 838756743127629824
-            //             [tweet] => Create your own simple @WordPress plugin to customise the Admin Interface by following our guide @WPBristolPeeps… https://t.co/KnLOJZ5FO8
-            //             [user_id] => 213256209
-            //             [user_name] => Atomic Smash
-            //             [user_handle] => atomicsmash
-            //             [user_image] => http://pbs.twimg.com/profile_images/692639579338326016/iwaOsRJn_normal.png
-            //             [user_location] => Bristol
-            //             [serial_number] => 0
-            //             [hidden] => 0
-            //             [created_at] => 2017-03-06 02:22:45
-            //             [updated_at] => 2017-03-07 10:32:39
-            //         )
-
-
-            // echo "<pre>";
-            // print_r($testing_array);
-            // echo "</pre>";
             ?>
             <div id="poststuff">
 				<div id="post-body" class="metabox-holder columns-3">
@@ -342,8 +261,8 @@ class DevelopmentSyncing {
 						<div class="meta-box-sortables ui-sortable">
 							<form method="post">
 								<?php
-								$entry_obj->prepare_items($missing_display);
-								$entry_obj->display(); ?>
+								$this->entry_obj->prepare_items($missing_display);
+								$this->entry_obj->display(); ?>
 							</form>
 						</div>
 					</div>
@@ -351,11 +270,6 @@ class DevelopmentSyncing {
 				<br class="clear">
 			</div>
             <?php
-
-            // $entry_obj->prepare_items($missing_remotely);
-            // $entry_obj->prepare_items($testing_array);
-            // $entry_obj->display();
-
 
             try {
 
@@ -373,10 +287,6 @@ class DevelopmentSyncing {
 
                 // $filetype['filename'];
 
-                // echo "<pre>";
-                // print_r($wp_upload_dir);
-                // echo "</pre>";
-
 
 
                 // $uploadList = array_diff($localFiles, $s3Files); // returns green.jpg
@@ -384,10 +294,10 @@ class DevelopmentSyncing {
 
 
 
-                //ASTODO KILL
+                //ASTODO possibly KILL
                 foreach($missing_locally as $file){
 
-                    echo $file.'';
+                    // echo $file.'';
 
                     // $result = $s3->getObject([
                     //     'Bucket' => $selected_s3_bucket,
@@ -398,11 +308,11 @@ class DevelopmentSyncing {
 
                 }
 
-                //ASTODO KILL
+                //ASTODO possibly KILL
                 foreach($missing_remotely as $file){
 
 
-                    echo $wp_upload_dir['basedir']."/".$file."<br>";
+                    // echo $wp_upload_dir['basedir']."/".$file."<br>";
                     // $dest = 's3://';
                     // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir']."/".$file, $dest);
                     // $manager->transfer();
@@ -431,15 +341,8 @@ class DevelopmentSyncing {
 $log_flume = new DevelopmentSyncing;
 
 
-
-
-
 //ASTODO get these functions in the the main class
 function display_s3_selection(){
-
-    // echo "<pre>";
-    // print_r($_POST);
-    // echo "</pre>";
 
 
 
@@ -521,8 +424,8 @@ class Media_List extends WP_List_Table {
 	public function __construct() {
 
 		parent::__construct( [
-			'singular' => __( 'Tweet', 'sp' ), //singular name of the listed records
-			'plural'   => __( 'Tweets', 'sp' ), //plural name of the listed records
+			'singular' => __( 'File', 'sp' ), //singular name of the listed records
+			'plural'   => __( 'Files', 'sp' ), //plural name of the listed records
 			'ajax'     => false //does this table support ajax?
 		] );
 
@@ -530,23 +433,17 @@ class Media_List extends WP_List_Table {
 
 
 	public function no_items() {
-		_e( 'No entries avaliable.', 'sp' );
+		_e( 'No files found.', 'sp' );
 	}
 
 
 	public function column_default( $item, $column_name ) {
         switch( $column_name ) {
-			// case 'tweet':
-            // case 'added_at':
-            // case 'user_location':
-            // return $item[ $column_name ];
-			case 'created_at':
-				// echo $item[ $column_name ];
-				return time_elapsed_string($item[ $column_name ]);
-			case 'user_image':
-				return "<img src='".$item[ $column_name ]."' />";
-			case 'user_handle':
-				return "@".$item[ $column_name ];
+			case 'location':
+                if( $item == "remote" ){
+                    return "<span class='dashicons dashicons-cloud'></span>";
+                };
+                return "<span class='dashicons dashicons-admin-home'></span>";
 	        default:
 	            return $item[ $column_name ]; //Show the whole array for troubleshooting purposes
         }
@@ -562,10 +459,10 @@ class Media_List extends WP_List_Table {
 	 */
 	function get_columns() {
 		$columns = array(
-            'tweet'    => 'Tweets',
+            'file'    => 'Files',
             // 'user_handle'      => 'Username',
             // 'user_image'      => 'Profile Image',
-            'created_at'      => 'When'
+            'location'      => 'Location'
         );
 
 		return $columns;
