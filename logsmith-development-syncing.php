@@ -71,7 +71,15 @@ class DevelopmentSyncing {
     }
 
     function submenu() {
-        add_media_page( 'Sync Media to S3', 'Sync Media to S3', 'upload_files', 'log-flume', array($this, 'admin_page') );
+        $hook = add_media_page( 'Sync Media to S3', 'Sync Media to S3', 'upload_files', 'log-flume', array($this, 'admin_page') );
+
+        echo "<pre>";
+        print_r($hook);
+        echo "</pre>";
+
+
+        add_action( "load-$hook", array( $this, 'screen_option' ));
+
     }
 
     function indexButton() {
@@ -90,6 +98,20 @@ class DevelopmentSyncing {
         return $safe_text;
     }
 
+    public function screen_option() {
+
+		$option = 'per_page';
+		$args   = [
+			'label'   => 'Entries',
+			'default' => 20,
+			'option'  => 'entries_per_page'
+		];
+
+		add_screen_option( $option, $args );
+
+		$this->entry_obj = new API_List();
+	}
+
     function admin_page() {
 
         ?>
@@ -98,10 +120,6 @@ class DevelopmentSyncing {
         </div>
         <?php
 
-        $entry_obj = new Media_List();
-
-        $entry_obj->prepare_items();
-        $entry_obj->display();
 
 
         // check user capabilities
@@ -312,6 +330,58 @@ class DevelopmentSyncing {
             print_r($missing_remotely);
             echo "</pre>";
 
+            $entry_obj = new Media_List();
+
+            $testing_array[0] = array(
+                // array(
+                    'id' => 2818,
+                    'created_at' => 'asdasda',
+                    'tweet' => 'asdasda'
+                // )
+            );
+
+
+            // Array
+            // (
+            //     [0] => Array
+            //         (
+            //             [id] => 838756743127629824
+            //             [tweet] => Create your own simple @WordPress plugin to customise the Admin Interface by following our guide @WPBristolPeeps… https://t.co/KnLOJZ5FO8
+            //             [user_id] => 213256209
+            //             [user_name] => Atomic Smash
+            //             [user_handle] => atomicsmash
+            //             [user_image] => http://pbs.twimg.com/profile_images/692639579338326016/iwaOsRJn_normal.png
+            //             [user_location] => Bristol
+            //             [serial_number] => 0
+            //             [hidden] => 0
+            //             [created_at] => 2017-03-06 02:22:45
+            //             [updated_at] => 2017-03-07 10:32:39
+            //         )
+
+
+            echo "<pre>";
+            print_r($testing_array);
+            echo "</pre>";
+            ?>
+            <div id="poststuff">
+				<div id="post-body" class="metabox-holder columns-3">
+					<div id="post-body-content">
+						<div class="meta-box-sortables ui-sortable">
+							<form method="post">
+								<?php
+								$entry_obj->prepare_items($testing_array);
+								$entry_obj->display(); ?>
+							</form>
+						</div>
+					</div>
+				</div>
+				<br class="clear">
+			</div>
+            <?php
+
+            // $entry_obj->prepare_items($missing_remotely);
+            // $entry_obj->prepare_items($testing_array);
+            // $entry_obj->display();
 
 
             try {
@@ -346,11 +416,11 @@ class DevelopmentSyncing {
 
                     echo $file.'';
 
-                    $result = $s3->getObject([
-                        'Bucket' => $selected_s3_bucket,
-                        'Key'    => $file,
-                        'SaveAs' => $wp_upload_dir['basedir']."/".$file
-                    ]);
+                    // $result = $s3->getObject([
+                    //     'Bucket' => $selected_s3_bucket,
+                    //     'Key'    => $file,
+                    //     'SaveAs' => $wp_upload_dir['basedir']."/".$file
+                    // ]);
 
 
                 }
@@ -364,13 +434,14 @@ class DevelopmentSyncing {
                     // $manager = new \Aws\S3\Transfer($s3, $wp_upload_dir['basedir']."/".$file, $dest);
                     // $manager->transfer();
 
-                    $result = $s3->putObject(array(
-                        'Bucket' => $selected_s3_bucket,
-                        'Key'    => $file,
-                        'SourceFile' => $wp_upload_dir['basedir']."/".$file
-                    ));
+                    // $result = $s3->putObject(array(
+                    //     'Bucket' => $selected_s3_bucket,
+                    //     'Key'    => $file,
+                    //     'SourceFile' => $wp_upload_dir['basedir']."/".$file
+                    // ));
 
                 }
+
 
 
             } catch (Aws\S3\Exception\S3Exception $e) {
@@ -486,36 +557,36 @@ class Media_List extends WP_List_Table {
 	}
 
 
-	public static function get_entries( $per_page = 20, $page_number = 1 ) {
-
-		global $twitter_api;
-
-		$result = $twitter_api->entries($per_page,$page_number);
-		// $result = parent::tweets($per_page,$page_number);
-		// parent::__construct( [
-
-		return $result;
-
-		// global $wpdb;
-		//
-		// $sql = "SELECT * FROM {$wpdb->prefix}api_twitter";
-		//
-		// if ( ! empty( $_REQUEST['orderby'] ) ) {
-		// 	$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
-		// 	$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' DESC';
-		// }else{
-		// 	$sql .= " ORDER BY `id` DESC";
-		// }
-		//
-		//
-		// $sql .= " LIMIT $per_page";
-		// $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
-		//
-		//
-		// $result = $wpdb->get_results( $sql, 'ARRAY_A' );
-		//
-		// return $result;
-	}
+	// public static function get_entries( $per_page = 20, $page_number = 1 ) {
+    //
+	// 	global $twitter_api;
+    //
+	// 	$result = $twitter_api->entries($per_page,$page_number);
+	// 	// $result = parent::tweets($per_page,$page_number);
+	// 	// parent::__construct( [
+    //
+	// 	return $result;
+    //
+	// 	// global $wpdb;
+	// 	//
+	// 	// $sql = "SELECT * FROM {$wpdb->prefix}api_twitter";
+	// 	//
+	// 	// if ( ! empty( $_REQUEST['orderby'] ) ) {
+	// 	// 	$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
+	// 	// 	$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' DESC';
+	// 	// }else{
+	// 	// 	$sql .= " ORDER BY `id` DESC";
+	// 	// }
+	// 	//
+	// 	//
+	// 	// $sql .= " LIMIT $per_page";
+	// 	// $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
+	// 	//
+	// 	//
+	// 	// $result = $wpdb->get_results( $sql, 'ARRAY_A' );
+	// 	//
+	// 	// return $result;
+	// }
 
 
 	/**
@@ -587,21 +658,22 @@ class Media_List extends WP_List_Table {
 	/**
 	 * Handles data query and filter, sorting, and pagination.
 	 */
-	public function prepare_items() {
+	public function prepare_items( $items = array() ) {
 
 		$this->_column_headers = $this->get_column_info();
 
 		$per_page     = $this->get_items_per_page( 'entries_per_page', 20 );
 		$current_page = $this->get_pagenum();
 		// $total_items  = self::record_count();
-		$total_items  = 30;
+		$total_items  = 1;
 
 		$this->set_pagination_args( [
 			'total_items' => $total_items, //WE have to calculate the total number of items
 			'per_page'    => $per_page //WE have to determine how many items to show on a page
 		] );
 
-		$this->items = self::get_entries( $per_page, $current_page );
+		// $this->items = self::get_entries( $per_page, $current_page );
+		$this->items = $items;
 	}
 
 
