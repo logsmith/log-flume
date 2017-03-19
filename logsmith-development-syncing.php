@@ -37,6 +37,7 @@ class DevelopmentSyncing {
 
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
+        add_action( 'admin_enqueue_scripts', array($this, 'tabs') );
 
         $this->setup = true;
 
@@ -45,9 +46,16 @@ class DevelopmentSyncing {
             $this->setup = false;
         };
 
+
+
     }
 
 
+    function tabs() {
+
+        wp_enqueue_script( 'welcome_screen_js', plugin_dir_url( __FILE__ ) . '/script.js', array( 'jquery' ), '1.0.0', true );
+
+    }
     function sample_admin_notice__success() {
 
         echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
@@ -115,9 +123,14 @@ class DevelopmentSyncing {
         };
 
         ?>
+        <!-- https://premium.wpmudev.org/blog/tabbed-interface/ -->
         <h2 class="nav-tab-wrapper">
-            <a href="#" class="nav-tab nav-tab-active">Display Options</a>
-            <a href="#" class="nav-tab">Social Options</a>
+            <!-- <a href="#" class="nav-tab nav-tab-active">Sync media</a>
+            <a href="#" class="nav-tab">Social Options</a> -->
+
+            <a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-about">Sync media</a>
+            <a class="nav-tab" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-credits">Select Bucket</a>
+
         </h2>
         <ul class="subsubsub">
         	<li class="all"><a href="edit.php?post_type=post">All <span class="count">(2)</span></a> |</li>
