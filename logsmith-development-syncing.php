@@ -253,17 +253,33 @@ class DevelopmentSyncing {
 
             echo "<h3>Files Missing locally</h3>";
 
-            $missing_locally = array_diff($found_files_remotely,$found_files_locally);
+            $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
 
             echo "<pre>";
             print_r($missing_locally);
             echo "</pre>";
 
 
+            $missing_display = array();
+
+            if( count( $missing_locally ) > 0 ){
+                foreach( $missing_locally as $missing_file ){
+                    $missing_display[] = array(
+                        'file' => $missing_file,
+                        'location' => 'local'
+                    );
+                }
+            }
+
+            echo "<pre>";
+            print_r($missing_display);
+            echo "</pre>";
+
+
 
             echo "<h3>Files Missing remotely</h3>";
 
-            $missing_remotely = array_diff($found_files_locally,$found_files_remotely);
+            $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
 
             echo "<pre>";
             print_r($missing_remotely);
@@ -271,23 +287,30 @@ class DevelopmentSyncing {
 
             $entry_obj = new Media_List();
 
-            $testing_array[0] = array(
-                // array(
-                    'id' => 2818,
-                    'created_at' => 'asdasda',
-                    'tweet' => 'asdasda'
-                // )
-            );
+            // $testing_array[0] = array(
+            //     // array(
+            //         'id' => 2818,
+            //         'created_at' => 'asdasda',
+            //         'tweet' => 'asdasda'
+            //     // )
+            // );
+            //
+            // echo "<pre>";
+            // print_r($testing_array);
+            // echo "</pre>";
+
+
+            if( count( $missing_remotely ) > 0 ){
+                foreach( $missing_remotely as $missing_file ){
+                    $missing_display[] = array(
+                        'file' => $missing_file,
+                        'location' => 'remote'
+                    );
+                }
+            }
 
             echo "<pre>";
-            print_r($testing_array);
-            echo "</pre>";
-
-
-            $testing_array = array_merge($missing_locally,$missing_remotely);
-
-            echo "<pre>";
-            print_r($testing_array);
+            print_r($missing_display);
             echo "</pre>";
 
 
@@ -309,9 +332,9 @@ class DevelopmentSyncing {
             //         )
 
 
-            echo "<pre>";
-            print_r($testing_array);
-            echo "</pre>";
+            // echo "<pre>";
+            // print_r($testing_array);
+            // echo "</pre>";
             ?>
             <div id="poststuff">
 				<div id="post-body" class="metabox-holder columns-3">
@@ -319,7 +342,7 @@ class DevelopmentSyncing {
 						<div class="meta-box-sortables ui-sortable">
 							<form method="post">
 								<?php
-								$entry_obj->prepare_items($testing_array);
+								$entry_obj->prepare_items($missing_display);
 								$entry_obj->display(); ?>
 							</form>
 						</div>
@@ -361,7 +384,7 @@ class DevelopmentSyncing {
 
 
 
-
+                //ASTODO KILL
                 foreach($missing_locally as $file){
 
                     echo $file.'';
@@ -375,7 +398,7 @@ class DevelopmentSyncing {
 
                 }
 
-
+                //ASTODO KILL
                 foreach($missing_remotely as $file){
 
 
