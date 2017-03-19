@@ -1,5 +1,5 @@
 {
-  "name": "logsmith/logflume",
+  "name": "logsmith/log-flume",
   "description": "Log Smith - Log Flume",
   "keywords": ["wordpress", "plugin", "dev"],
   "homepage": "http://www.atomicsmash.co.uk/",
@@ -9,6 +9,11 @@
       "name": "Atomic Smash",
       "email": "mail@atomicsmash.co.uk",
       "homepage": "https://www.atomicsmash.co.uk/"
+  },
+    {
+      "name": "David Darke",
+      "email": "david@atomicsmash.co.uk",
+      "homepage": "https://www.atomicsmash.co.uk/"
     }
   ],
   "type": "wordpress-plugin",
@@ -16,7 +21,7 @@
       "aws/aws-sdk-php"							: "3.24.2"
   },
   "dist": {
-        "url": "https://github.com/logsmith/logflume/archive/master.zip",
+        "url": "https://github.com/logsmith/log-flume/archive/master.zip",
         "type": "zip"
   }
 }

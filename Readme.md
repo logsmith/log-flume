@@ -2,6 +2,8 @@
 
 This plugin is for syncing Wordpress assets between developer machines over Amazon S3.
 
+This is not intended to be used for syncing media from Live servers to Development servers.
+
 # Todo
 
 - ~~Get assets to upload from S3~~
@@ -32,14 +34,16 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 
 # Changelog
 
-= 0.0.1 =
-* Got basic upload working with S3
-
-= 0.0.2 =
-* Got basic download working with S3
+= 0.0.4 =
+* Added AWS settings detection and helpers to admin page
+* Added tabbing to admin screen
+* Sorted table displaying for media once synced
 
 = 0.0.3 =
 * Tetsing and debugging
 
-= 0.0.4 =
-* Added AWS settings detection and helpers to admin page
+= 0.0.2 =
+* Got basic download working with S3
+
+= 0.0.1 =
+* Got basic upload working with S3
