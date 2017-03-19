@@ -11,6 +11,7 @@ This is not intended to be used for syncing media from Live servers to Developme
 - Create a bucket selection process
 - Create a bucket creation process
 - ~~Create a config guide is AWS creds aren't available~~
+- There needs to be a list of skippable/ignore files
 - Create a config guide is AWS creds aren't correct
 - Get assets to sync Asynchronously
 
@@ -37,7 +38,7 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 = 0.0.4 =
 * Added AWS settings detection and helpers to admin page
 * Added tabbing to admin screen
-* Sorted table displaying for media once synced
+* Sorted table displaying for media once that needs syncing
 
 = 0.0.3 =
 * Tetsing and debugging
