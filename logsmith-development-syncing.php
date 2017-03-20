@@ -45,7 +45,8 @@ class DevelopmentSyncing {
 
 
     function tabs_js() {
-        wp_enqueue_script( 'welcome_screen_js', plugin_dir_url( __FILE__ ) . '/script.js', array( 'jquery' ), '1.0.0', true );
+        wp_enqueue_script( 'log_flume_js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0.0', true );
+		wp_enqueue_style( 'log_flume_css', plugin_dir_url( __FILE__ ) . 'styles.css' );
     }
 
 	//ASTODO - pretty this doesn't need to be a function
@@ -199,19 +200,13 @@ class DevelopmentSyncing {
         };
 
         ?>
-        <!-- https://premium.wpmudev.org/blog/tabbed-interface/ -->
         <h2 class="nav-tab-wrapper">
-            <!-- <a href="#" class="nav-tab nav-tab-active">Sync media</a>
-            <a href="#" class="nav-tab">Social Options</a> -->
-
             <a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-about">Sync media</a>
             <a class="nav-tab" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-credits">Select Bucket</a>
-
         </h2>
-
         <?php
 
-		echo "<div class='wrap section'>";
+		echo "<div class='wrap section visible_section'>";
 
         $selected_s3_bucket = get_option('logflume_s3_bucket');
 
@@ -305,27 +300,32 @@ class DevelopmentSyncing {
             }
         }
 
-        ?>
-        <div id="poststuff">
-			<div id="post-body" class="metabox-holder columns-3">
-				<div id="post-body-content">
-					<div class="meta-box-sortables ui-sortable">
-						<form method="post">
-							<?php
-							$this->entry_obj->prepare_items($missing_display);
-							$this->entry_obj->display(); ?>
-						</form>
+		if(!isset($_GET['sync'])){
+
+	        ?>
+	        <div id="poststuff">
+				<div id="post-body" class="metabox-holder columns-3">
+					<div id="post-body-content">
+						<div class="meta-box-sortables ui-sortable">
+							<form method="post">
+								<?php
+								$this->entry_obj->prepare_items($missing_display);
+								$this->entry_obj->display(); ?>
+							</form>
+						</div>
 					</div>
 				</div>
+				<br class="clear">
 			</div>
-			<br class="clear">
-		</div>
-        <?php
+	        <?php
 
-		echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a><br><br>";
+			if( count($missing_display) > 0 ){
+				echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
+			}else{
+				echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
+			}
 
-
-		if(isset($_GET['sync'])){
+		} else {
 
 	        try {
 
@@ -358,6 +358,8 @@ class DevelopmentSyncing {
 
                 }
 
+				echo "<h3>Sync complete</h3>";
+				echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Reload</a><br><br>";
 
 
             } catch (Aws\S3\Exception\S3Exception $e) {
@@ -398,13 +400,11 @@ $log_flume = new DevelopmentSyncing;
 class Media_List extends WP_List_Table {
 
 	public function __construct() {
-
 		parent::__construct( [
 			'singular' => __( 'File', 'sp' ), //singular name of the listed records
 			'plural'   => __( 'Files', 'sp' ), //plural name of the listed records
 			'ajax'     => false //does this table support ajax?
 		] );
-
 	}
 
 
@@ -436,8 +436,6 @@ class Media_List extends WP_List_Table {
 	function get_columns() {
 		$columns = array(
             'file'    => 'Files',
-            // 'user_handle'      => 'Username',
-            // 'user_image'      => 'Profile Image',
             'location'      => 'Location'
         );
 
@@ -455,14 +453,16 @@ class Media_List extends WP_List_Table {
 		$per_page     = $this->get_items_per_page( 'entries_per_page', 20 );
 		$current_page = $this->get_pagenum();
         //ASTODO count the item array
-		$total_items  = 1;
+		$total_items  = count($items);
 
-		$this->set_pagination_args( [
+		$this->set_pagination_args([
 			'total_items' => $total_items, //WE have to calculate the total number of items
 			'per_page'    => $per_page //WE have to determine how many items to show on a page
-		] );
+		]);
 
-		// $this->items = self::get_entries( $per_page, $current_page );
-		$this->items = $items;
+
+
+		$this->items = array_slice( $items, ( ($current_page - 1) * $per_page ), $per_page );
+
 	}
 }
