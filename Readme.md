@@ -40,6 +40,8 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 # Changelog
 
 = 0.0.5 =
+* Added AWS connection testing
+* Added check to see if a AWS bucket has been selected
 
 = 0.0.4 =
 * Added AWS settings detection and helpers to admin page
