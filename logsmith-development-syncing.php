@@ -223,10 +223,39 @@ class DevelopmentSyncing {
             ],
         ]);
 
+		// try {
+		//   $client->listObjects([
+		//     'Bucket' => $bucket
+		//   ]);
+		// } catch (Aws\S3\Exception\S3Exception $e) {
+		//     echo "<pre>";
+		//     echo $e->getMessage() . "\n";
+		//     echo $e->getTraceAsString();
+		//     echo "</pre>";
+		// }
 
-        $iterator = $s3->getIterator('ListObjects', array(
-            'Bucket' => $selected_s3_bucket
-        ));
+
+
+		try {
+			// This is only to chekc if the AWS connection details work
+			$buckets = $s3->listBuckets();
+
+		} catch (Aws\S3\Exception\S3Exception $e) {
+		    wp_die('<h2>There seems to be an issue with your connection details</h2>');
+
+		};
+
+
+		$iterator = $s3->getIterator('ListObjects', array(
+			'Bucket' => $selected_s3_bucket
+		));
+
+
+
+
+        // $iterator = $s3->getIterator('ListObjects', array(
+        //     'Bucket' => $selected_s3_bucket
+        // ));
 
         $found_files_remotely = array();
 

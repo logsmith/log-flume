@@ -12,7 +12,7 @@ This is not intended to be used for syncing media from Live servers to Developme
 - Create a bucket creation process
 - ~~Create a config guide is AWS creds aren't available~~
 - There needs to be a list of skippable/ignored files
-- Create a config guide is AWS creds aren't correct
+- ~~Create a warning if AWS creds aren't correct~~
 - Get assets to sync Asynchronously
 - ~~File table: Total count isn't working~~
 - ~~File table: Pagination isn't working~~
