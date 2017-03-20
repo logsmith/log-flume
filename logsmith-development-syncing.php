@@ -242,25 +242,21 @@ class DevelopmentSyncing {
 
 			try {
 
-				$iterator = $s3->listObjects([
+				$iterator = $s3->getIterator('ListObjects', array(
 					'Bucket' => $selected_s3_bucket
-				]);
+				));
+
 
 			} catch (Aws\S3\Exception\S3Exception $e) {
 			    wp_die('<h2>There seems to be an issue with your connection details</h2>');
 			};
 
 
-			// $iterator = $s3->getIterator('ListObjects', array(
-			// 	'Bucket' => $selected_s3_bucket
-			// ));
-
 	        $found_files_remotely = array();
 
-			//ASTODO fix issue with - Warning: Invalid argument supplied for foreach() in /var/www/atomicsmash.dev/wp-content/plugins/log-flume/logsmith-development-syncing.php on line 260
 
-			if( count( $iterator['Contents'] ) > 0 ){
-				foreach ($iterator['Contents'] as $object) {
+			if( count( $iterator ) > 0 ){
+				foreach ($iterator as $object) {
 
 		            $found_files_remotely[] = $object['Key'];
 
@@ -304,7 +300,10 @@ class DevelopmentSyncing {
 	        }
 
 
+
 	        $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
+
+
 
 	        $missing_display = array();
 
