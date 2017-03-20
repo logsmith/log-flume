@@ -3,7 +3,7 @@
 Plugin Name: Logsmith - Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files
-Version: 0.0.4
+Version: 0.0.5
 Author: Atomic Smash
 Author URI: http://www.atomicsmash.co.uk
 */

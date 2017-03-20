@@ -6,14 +6,19 @@
   "license": "",
   "authors": [
     {
-      "name": "Atomic Smash",
-      "email": "mail@atomicsmash.co.uk",
-      "homepage": "https://www.atomicsmash.co.uk/"
-  },
+        "name": "David Darke",
+        "email": "david@atomicsmash.co.uk",
+        "homepage": "https://www.atomicsmash.co.uk/"
+    },
     {
-      "name": "David Darke",
-      "email": "david@atomicsmash.co.uk",
-      "homepage": "https://www.atomicsmash.co.uk/"
+        "name": "Atomic Smash",
+        "email": "mail@atomicsmash.co.uk",
+        "homepage": "https://www.atomicsmash.co.uk/"
+    },
+    {
+        "name": "Logsmith",
+        "email": "logsmith@atomicsmash.co.uk",
+        "homepage": "https://www.atomicsmash.co.uk/"
     }
   ],
   "type": "wordpress-plugin",

@@ -39,6 +39,8 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 
 # Changelog
 
+= 0.0.5 =
+
 = 0.0.4 =
 * Added AWS settings detection and helpers to admin page
 * Added tabbing to admin screen
