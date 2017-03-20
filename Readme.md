@@ -4,21 +4,6 @@ This plugin is for syncing Wordpress assets between developer machines over Amaz
 
 This is not intended to be used for syncing media from Live servers to Development servers.
 
-# Todo
-
-- ~~Get assets to upload from S3~~
-- ~~Get assets to download from S3~~
-- ~~Create a bucket selection process~~
-- Create a bucket creation process
-- ~~Create a config guide is AWS creds aren't available~~
-- There needs to be a list of skippable/ignored files
-- ~~Create a warning if AWS creds aren't correct~~
-- Get assets to sync Asynchronously
-- ~~File table: Total count isn't working~~
-- ~~File table: Pagination isn't working~~
-- ~~Hide sync button if nothing is actually available to sync~~
-- ~~Hide tabs that shouldn't be seen~~
-
 # Installation
 
 Add the Wordpress plugin to your composer file:
@@ -37,7 +22,26 @@ define('AWS_ACCESS_KEY_ID','xxxxxx');
 define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 ```
 
+# Todo
+
+- ~~Get assets to upload from S3~~
+- ~~Get assets to download from S3~~
+- ~~Create a bucket selection process~~
+- ~~Create a config guide is AWS creds aren't available~~
+- ~~Create a warning if AWS creds aren't correct~~
+- ~~File table: Total count isn't working~~
+- ~~File table: Pagination isn't working~~
+- ~~Hide sync button if nothing is actually available to sync~~
+- ~~Hide tabs that shouldn't be seen~~
+- Create a bucket creation process
+- There needs to be a list of skippable/ignored files
+- Get assets to sync Asynchronously
+
+
 # Changelog
+
+= 0.0.6 =
+
 
 = 0.0.5 =
 * Added AWS connection testing

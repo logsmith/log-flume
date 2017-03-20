@@ -2,8 +2,8 @@
 /*
 Plugin Name: Logsmith - Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
-Description: Sync development media files
-Version: 0.0.5
+Description: Sync development media files to Amazon S3
+Version: 0.0.6
 Author: Atomic Smash
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -130,7 +130,7 @@ class DevelopmentSyncing {
 
 
 
-	    //ASTODO this is dupe
+	    //ASTODO this get_option is dupe
 	    $selected = get_option('logflume_s3_bucket');
 
 	    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
@@ -257,11 +257,15 @@ class DevelopmentSyncing {
 
 	        $found_files_remotely = array();
 
-	        foreach ($iterator['Contents'] as $object) {
-	            // echo $object['Key'] . "<br>";
-	            $found_files_remotely[] = $object['Key'];
+			//ASTODO fix issue with - Warning: Invalid argument supplied for foreach() in /var/www/atomicsmash.dev/wp-content/plugins/log-flume/logsmith-development-syncing.php on line 260
 
-	        }
+			if( count( $iterator['Contents'] ) > 0 ){
+				foreach ($iterator['Contents'] as $object) {
+
+		            $found_files_remotely[] = $object['Key'];
+
+		        }
+			}
 
 	        $wp_upload_dir = wp_upload_dir();
 
