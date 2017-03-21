@@ -1,4 +1,4 @@
-# Log Flume
+![log-flume-logo](https://cloud.githubusercontent.com/assets/1636310/24171665/407f51a2-0e7d-11e7-974f-f80e0c45e1ed.jpg)
 
 This plugin is for syncing Wordpress assets between developer machines over Amazon S3.
 
@@ -22,6 +22,10 @@ define('AWS_ACCESS_KEY_ID','xxxxxx');
 define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 ```
 
+### Don't have AWS details?
+
+Here is [our guide](https://github.com/logsmith/log-flume/wiki) on how to setup an IAM Amazon user and get the access and secret key that you need.
+
 # Todo
 
 - ~~Get assets to upload from S3~~
@@ -36,27 +40,3 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 - Create a bucket creation process
 - There needs to be a list of skippable/ignored files
 - Get assets to sync Asynchronously
-
-
-# Changelog
-
-= 0.0.6 =
-
-
-= 0.0.5 =
-* Added AWS connection testing
-* Added check to see if a AWS bucket has been selected
-
-= 0.0.4 =
-* Added AWS settings detection and helpers to admin page
-* Added tabbing to admin screen
-* Sorted table displaying for media that needs syncing
-
-= 0.0.3 =
-* Testing and debugging
-
-= 0.0.2 =
-* Got basic download working with S3
-
-= 0.0.1 =
-* Got basic upload working with S3
