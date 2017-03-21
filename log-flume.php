@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: Logsmith - Log Flume
+Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
 Version: 0.0.7
-Author: Atomic Smash
+Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
 

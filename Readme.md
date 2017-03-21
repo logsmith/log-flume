@@ -1,8 +1,6 @@
 ![log-flume-logo](https://cloud.githubusercontent.com/assets/1636310/24171665/407f51a2-0e7d-11e7-974f-f80e0c45e1ed.jpg)
 
-This plugin is for syncing Wordpress assets between developer machines over Amazon S3.
-
-This is not intended to be used for syncing media from Live servers to Development servers.
+This allows developers to sync WordPress media libraries between machines. Currently the focus is on development setups and is not intended to be used for transferring media between live and development environments.
 
 # Installation
 
