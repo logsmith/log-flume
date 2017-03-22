@@ -2,6 +2,7 @@
 
 = 0.0.7 =
 * Improved setup instructions
+* There was an issue with downloading files into directories that didn’t exist
 
 = 0.0.6 =
 * Fixed a foreach() bug

@@ -369,11 +369,22 @@ class DevelopmentSyncing {
 					// Download missing files
 	                foreach($missing_locally as $file){
 
-	                    $result = $s3->getObject([
-	                        'Bucket' => $selected_s3_bucket,
-	                        'Key'    => $file,
-	                        'SaveAs' => $wp_upload_dir['basedir']."/".$file
-	                    ]);
+						//Check to see if the missing $file is actually a folder
+						$ext = pathinfo($file, PATHINFO_EXTENSION);
+
+						//Check to see if the directory exists
+						if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file))) {
+							mkdir(dirname($wp_upload_dir['basedir']."/".$file),0755, true);
+						};
+
+						//If the $file isn't a folder download it
+						if($ext != ""){
+							$result = $s3->getObject([
+							   'Bucket' => $selected_s3_bucket,
+							   'Key'    => $file,
+							   'SaveAs' => $wp_upload_dir['basedir']."/".$file
+						    ]);
+						}
 
 	                }
 
