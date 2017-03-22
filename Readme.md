@@ -22,7 +22,7 @@ define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 
 ### Don't have AWS details?
 
-Here is [our guide](https://github.com/logsmith/log-flume/wiki) on how to setup an IAM Amazon user and get the access and secret key that you need.
+Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
 # Todo
 
