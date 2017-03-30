@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.7
+Version: 0.0.8
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -13,11 +13,9 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
-
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
-
 
 class DevelopmentSyncing {
 
@@ -204,7 +202,7 @@ class DevelopmentSyncing {
 
 		//ASTODO this should all be in PHP
         ?>
-        <h2 class="nav-tab-wrapper">
+        <h2 class="nav-tab-wrapper log-flume-tabs">
 			<?php
 			// Check to see if bucket has been selected
 			if($selected_s3_bucket == ""){
@@ -446,7 +444,6 @@ class DevelopmentSyncing {
 }
 
 $log_flume = new DevelopmentSyncing;
-
 
 class Media_List extends WP_List_Table {
 
