@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.8
+Version: 0.0.9
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -186,7 +186,7 @@ class DevelopmentSyncing {
         }
 
 
-        if( $this->setup == 'details' ){
+        if( $this->setup === "details" ){
             echo "<h2>AWS setting missing :(</h2>";
 
             echo "Looks like you need to add these Constants to your config file:";
@@ -203,7 +203,7 @@ class DevelopmentSyncing {
         };
 
 
-        if( $this->setup == 'autoload' ){
+        if( $this->setup === "autoload" ){
             echo "<h2>AWS classes missing :(</h2>";
 
             echo "It seems like the Log Flume can't find the AWS classes it needs to sync. This could be because:";

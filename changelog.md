@@ -1,5 +1,9 @@
 # Changelog
 
+= 0.0.9 =
+* Added a validation for the existence of AWS classes
+* Updated ifs when doing settings checks
+
 = 0.0.8 =
 * Fixed JS error with tabs
 
