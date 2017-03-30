@@ -1,5 +1,8 @@
 # Changelog
 
+= 0.0.8 =
+* Fixed JS error with tabs
+
 = 0.0.7 =
 * Improved setup instructions
 * There was an issue with downloading files into directories that didn’t exist
