@@ -291,6 +291,7 @@ class DevelopmentSyncing {
 	        );
 
 	        // $paths = array($wp_upload_dir['basedir']);
+			$found_files_locally = array();
 
 	        foreach ($iter as $path => $dir) {
 	            // if ($dir->isDir()) {
