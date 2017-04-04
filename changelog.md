@@ -1,5 +1,11 @@
 # Changelog
 
+= 0.0.11 =
+*
+
+= 0.0.10 =
+* Defined  an undefined array
+
 = 0.0.9 =
 * Added a validation for the existence of AWS classes
 * Updated ifs when doing settings checks

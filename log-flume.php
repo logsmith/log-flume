@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.9
+Version: 0.0.11
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -25,7 +25,7 @@ class DevelopmentSyncing {
 
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
-        add_action( 'admin_enqueue_scripts', array($this, 'tabs_js') );
+        add_action( 'admin_enqueue_scripts', array($this, 'log_flume_assets') );
 
         $this->setup = true;
 
@@ -48,9 +48,17 @@ class DevelopmentSyncing {
     }
 
 
-    function tabs_js() {
-        wp_enqueue_script( 'log_flume_js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0.0', true );
+    function log_flume_assets() {
+
+		// Add JS
+		wp_enqueue_script( 'log_flume_js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0.0', true );
+		// Localize a ajaxurl variable
+		wp_localize_script( 'log_flume_js', 'log_flume', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
+
+		// Enqueue the CSS
 		wp_enqueue_style( 'log_flume_css', plugin_dir_url( __FILE__ ) . 'styles.css' );
+
+
     }
 
 	//ASTODO - pretty this doesn't need to be a function
@@ -243,6 +251,12 @@ class DevelopmentSyncing {
 		// Don't render any bucket options if a bucket isn't selected
 		if($selected_s3_bucket != ""){
 			echo "<div class='wrap section visible_section'>";
+
+
+			$nonce = wp_create_nonce("log_flume_nonce");
+			$link = admin_url('admin-ajax.php?action=log_flume_transfer&post_id=1&nonce='.$nonce);
+			echo '<a class="trigger" data-nonce="' . $nonce . '" data-post_id="100" href="' . $link . '">test trigger</a>';
+
 
 
 
@@ -536,3 +550,49 @@ class Media_List extends WP_List_Table {
 
 	}
 }
+
+
+
+
+
+
+add_action("wp_ajax_log_flume_transfer", "log_flume_transfer");
+add_action("wp_ajax_nopriv_log_flume_transfer", "my_must_login");
+
+function log_flume_transfer() {
+
+   if ( !wp_verify_nonce( $_REQUEST['nonce'], "log_flume_nonce")) {
+      exit("No naughty business please");
+   }
+
+
+	echo $_REQUEST["post_id"];
+	die();
+
+   if($something === false) {
+      $result['type'] = "error";
+      $result['count'] = "";
+   }
+   else {
+      $result['type'] = "success";
+      $result['count'] = "";
+   }
+
+   if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+      $result = json_encode($result);
+      echo $result;
+   }
+   else {
+    //   header("Location: ".$_SERVER["HTTP_REFERER"]);
+   }
+
+   die();
+
+}
+
+// Get this into an anonymous function
+function my_must_login() {
+   echo "You must log in";
+   die();
+}
+
