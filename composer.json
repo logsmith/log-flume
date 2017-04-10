@@ -24,9 +24,5 @@
   "type": "wordpress-plugin",
   "require": {
       "aws/aws-sdk-php"							: "3.24.2"
-  },
-  "dist": {
-        "url": "https://github.com/logsmith/log-flume/archive/master.zip",
-        "type": "zip"
   }
 }
