@@ -1,5 +1,14 @@
 # Changelog
 
+= 0.0.12 =
+* Worked on warnings for bad AWS credentials
+
+= 0.0.11 =
+* Composer fixes
+
+= 0.0.10 =
+* Composer fixes
+
 = 0.0.9 =
 * Added a validation for the existence of AWS classes
 * Updated ifs when doing settings checks

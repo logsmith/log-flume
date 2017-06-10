@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.11
+Version: 0.0.12
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -29,7 +29,8 @@ class DevelopmentSyncing {
 
         $this->setup = true;
 
-        if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "") {
+        if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || !defined('AWS_REGION') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "" || AWS_REGION == "" ) {
+
             add_action( 'admin_notices', function(){
 				echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
 			} );
@@ -88,24 +89,36 @@ class DevelopmentSyncing {
 
     	add_settings_field("logflume_s3_bucket", "Select bucket", array( $this, "display_s3_selection" ), "theme-options", "section");
 
+    	// add_settings_field("logflume_s3_bucket2", "Create bucket", array( $this, "display_s3_creation" ), "theme-options", "section");
+
         register_setting("section", "logflume_s3_bucket");
 
     }
 
 	function display_s3_selection(){
 
-
-
 	    $s3 = new S3Client([
 	        'version'     => 'latest',
-	        'region'      => 'eu-west-2',
+	        'region'      => AWS_REGION,
 	        'credentials' => [
 	            'key'    => AWS_ACCESS_KEY_ID,
 	            'secret' => AWS_SECRET_ACCESS_KEY,
 	        ],
 	    ]);
 
-	    $result = $s3->listBuckets(array());
+		$connected_to_S3 = true;
+
+		try {
+			$result = $s3->listBuckets(array());
+		}
+
+		//catch exception
+		catch(Aws\S3\Exception\S3Exception $e) {
+			$connected_to_S3 = false;
+			// echo 'Message: ' .$e->getMessage();
+		};
+
+
 
 
 	    // $new_bucket_name = 'logflume-tes2t';
@@ -132,26 +145,39 @@ class DevelopmentSyncing {
 
 
 
+		if($connected_to_S3 == true){
+		    //ASTODO this get_option is dupe
+		    $selected = get_option('logflume_s3_bucket');
+
+		    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
+
+				echo "<option value='select'>Please Select</option>";
+			    foreach ($result['Buckets'] as $bucket) {
 
 
-	    //ASTODO this get_option is dupe
-	    $selected = get_option('logflume_s3_bucket');
 
-	    echo "<select name='logflume_s3_bucket' id='logflume_s3_bucket'>";
-	    foreach ($result['Buckets'] as $bucket) {
+			        if($bucket['Name'] == $selected){
+			            echo "<option selected='selected' value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+			        }else{
+			            echo "<option value='".$bucket['Name']."'>".$bucket['Name']."</option>";
+			        }
 
-	        if($bucket['Name'] == $selected){
-	            echo "<option selected='selected' value='".$bucket['Name']."'>".$bucket['Name']."</option>";
-	        }else{
-	            echo "<option value='".$bucket['Name']."'>".$bucket['Name']."</option>";
-	        }
+			    }
+		    echo "</select>";
 
-	    }
-	    echo "</select>";
+		}else{
 
+			echo "Error connecting to Amazon S3, please check your credentials.";
 
+		}
+	}
+
+	function display_s3_creation(){
+
+	    echo "<input name='logflume_s3_bucket_create' id='logflume_s3_bucket_create' />";
 
 	}
+
 
     public function screen_option() {
 
@@ -179,9 +205,6 @@ class DevelopmentSyncing {
 
         // check user capabilities
         if ( ! current_user_can( 'manage_options' ) ) {
-
-
-
             return;
         }
 
@@ -192,10 +215,10 @@ class DevelopmentSyncing {
             echo "Looks like you need to add these Constants to your config file:";
 
             echo "<pre>";
+                echo "define('AWS_REGION','');\n";
                 echo "define('AWS_ACCESS_KEY_ID','');\n";
                 echo "define('AWS_SECRET_ACCESS_KEY','');";
             echo "</pre>";
-
 
             echo "Once these are in place, come back here to select your bucket.";
 
@@ -216,230 +239,231 @@ class DevelopmentSyncing {
         };
 
 
-
-
 		$selected_s3_bucket = get_option('logflume_s3_bucket');
 
 
-		//ASTODO this should all be in PHP
+		$s3 = new S3Client([
+			'version'     => 'latest',
+			'region'      => AWS_REGION,
+			'credentials' => [
+				'key'    => AWS_ACCESS_KEY_ID,
+				'secret' => AWS_SECRET_ACCESS_KEY,
+			],
+		]);
+
+
         ?>
         <h2 class="nav-tab-wrapper log-flume-tabs">
 			<?php
 			// Check to see if bucket has been selected
-			if($selected_s3_bucket == ""){
+			if($selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
 				?>
-				<a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-credits">Select Bucket</a>
+				<a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-about">Sync media</a>
+				<a class="nav-tab" href="<?php echo admin_url() ?>/index.php?page=logflume">Select Bucket</a>
 				<?php
 			}else{
 				?>
-				<a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-about">Sync media</a>
-				<a class="nav-tab" href="<?php echo admin_url() ?>/index.php?page=welcome-screen-credits">Select Bucket</a>
+				<a class="nav-tab nav-tab-active" href="<?php echo admin_url() ?>/index.php?page=logflume">Select Bucket</a>
 				<?php
 			}
 			?>
         </h2>
         <?php
 
+
 		// Don't render any bucket options if a bucket isn't selected
-		if($selected_s3_bucket != ""){
+		if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
 			echo "<div class='wrap section visible_section'>";
 
 
-
-
-	        $ignore = array("DS_Store");
-
-	        // Instantiate an Amazon S3 client.
-	        $s3 = new S3Client([
-	            'version'     => 'latest',
-	            'region'      => 'eu-west-2',
-	            'credentials' => [
-	                'key'    => AWS_ACCESS_KEY_ID,
-	                'secret' => AWS_SECRET_ACCESS_KEY,
-	            ],
-	        ]);
-
-			try {
-
-				$iterator = $s3->getIterator('ListObjects', array(
-					'Bucket' => $selected_s3_bucket
-				));
-
-
-			} catch (Aws\S3\Exception\S3Exception $e) {
-			    wp_die('<h2>There seems to be an issue with your connection details</h2>');
-			};
-
-
-	        $found_files_remotely = array();
-
-
-			if( count( $iterator ) > 0 ){
-				foreach ($iterator as $object) {
-
-		            $found_files_remotely[] = $object['Key'];
-
-		        }
-			}
-
-	        $wp_upload_dir = wp_upload_dir();
-
-	        $iter = new RecursiveIteratorIterator(
-	            new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
-	            RecursiveIteratorIterator::SELF_FIRST,
-	            RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
-	        );
-
-	        // $paths = array($wp_upload_dir['basedir']);
-			$found_files_locally = array();
-
-	        foreach ($iter as $path => $dir) {
-	            // if ($dir->isDir()) {
-
-	            $filetype = pathinfo($dir);
+		        $ignore = array("DS_Store");
 
 
 
-	            //This would be nicer to have this in the RecursiveIteratorIterator
-	            if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
-	                $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
-	                // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
-	                // echo $filetype['filename']."<br>";
-	            }
+		        // Instantiate an Amazon S3 client.
+		        $s3 = new S3Client([
+		            'version'     => 'latest',
+		            'region'      => 'eu-west-2',
+		            'credentials' => [
+		                'key'    => AWS_ACCESS_KEY_ID,
+		                'secret' => AWS_SECRET_ACCESS_KEY,
+		            ],
+		        ]);
 
-	                // $filetype = pathinfo($path);
-	                //
-	                // echo "<pre>";
-	                // print_r($filetype);
-	                // echo "</pre>";
+				try {
 
-	                // echo $filetype."<br><br>";
-
-
-	                // }
-	        }
+				    $iterator = $s3->getIterator('ListObjects', array(
+				        'Bucket' => $selected_s3_bucket
+				    ));
 
 
+			        $found_files_remotely = array();
 
-	        $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
+					if( count( $iterator ) > 0 ){
+						foreach ($iterator as $object) {
+
+				            $found_files_remotely[] = $object['Key'];
+
+				        }
+					}
+
+			        $wp_upload_dir = wp_upload_dir();
+
+			        $iter = new RecursiveIteratorIterator(
+			            new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
+			            RecursiveIteratorIterator::SELF_FIRST,
+			            RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+			        );
+
+			        // $paths = array($wp_upload_dir['basedir']);
+					$found_files_locally = array();
+
+			        foreach ($iter as $path => $dir) {
+			            // if ($dir->isDir()) {
+
+			            $filetype = pathinfo($dir);
+
+			            //This would be nicer to have this in the RecursiveIteratorIterator
+			            if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
+			                $found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
+			                // echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
+			                // echo $filetype['filename']."<br>";
+			            }
+
+			        }
 
 
-
-	        $missing_display = array();
-
-	        if( count( $missing_locally ) > 0 ){
-	            foreach( $missing_locally as $missing_file ){
-	                $missing_display[] = array(
-	                    'file' => $missing_file,
-	                    'location' => 'remote'
-	                );
-	            }
-	        }
+			        $missing_locally = array_diff( $found_files_remotely, $found_files_locally );
 
 
+			        $missing_display = array();
 
-	        $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
+			        if( count( $missing_locally ) > 0 ){
+			            foreach( $missing_locally as $missing_file ){
+			                $missing_display[] = array(
+			                    'file' => $missing_file,
+			                    'location' => 'remote'
+			                );
+			            }
+			        }
 
 
-	        if( count( $missing_remotely ) > 0 ){
-	            foreach( $missing_remotely as $missing_file ){
-	                $missing_display[] = array(
-	                    'file' => $missing_file,
-	                    'location' => 'local'
-	                );
-	            }
-	        }
+			        $missing_remotely = array_diff( $found_files_locally, $found_files_remotely );
 
-			if(!isset($_GET['sync'])){
+			        if( count( $missing_remotely ) > 0 ){
+			            foreach( $missing_remotely as $missing_file ){
+			                $missing_display[] = array(
+			                    'file' => $missing_file,
+			                    'location' => 'local'
+			                );
+			            }
+			        }
 
-		        ?>
-		        <div id="poststuff">
-					<div id="post-body" class="metabox-holder columns-3">
-						<div id="post-body-content">
-							<div class="meta-box-sortables ui-sortable">
-								<form method="post">
-									<?php
-									$this->entry_obj->prepare_items($missing_display);
-									$this->entry_obj->display(); ?>
-								</form>
+
+					if(!isset($_GET['sync'])){
+
+				        ?>
+				        <div id="poststuff">
+							<div id="post-body" class="metabox-holder columns-3">
+								<div id="post-body-content">
+									<div class="meta-box-sortables ui-sortable">
+										<form method="post">
+											<?php
+											$this->entry_obj->prepare_items($missing_display);
+											$this->entry_obj->display(); ?>
+										</form>
+									</div>
+								</div>
 							</div>
+							<br class="clear">
 						</div>
-					</div>
-					<br class="clear">
-				</div>
-		        <?php
+				        <?php
 
-				if( count($missing_display) > 0 ){
-					echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
-				}else{
-					echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
-				}
-
-			} else {
-
-		        try {
-
-		            $keyPrefix = '';
-		            $options = array(
-		                // 'params'      => array('ACL' => 'public-read'),
-		                'concurrency' => 20,
-		                'debug'       => true
-		            );
-
-					// Download missing files
-	                foreach($missing_locally as $file){
-
-						//Check to see if the missing $file is actually a folder
-						$ext = pathinfo($file, PATHINFO_EXTENSION);
-
-						//Check to see if the directory exists
-						if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file))) {
-							mkdir(dirname($wp_upload_dir['basedir']."/".$file),0755, true);
-						};
-
-						//If the $file isn't a folder download it
-						if($ext != ""){
-							$result = $s3->getObject([
-							   'Bucket' => $selected_s3_bucket,
-							   'Key'    => $file,
-							   'SaveAs' => $wp_upload_dir['basedir']."/".$file
-						    ]);
+						if( count($missing_display) > 0 ){
+							echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
+						}else{
+							echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
 						}
 
-	                }
+					} else {
 
-					// Upload missing files
-	                foreach($missing_remotely as $file){
+				        try {
 
-	                    $result = $s3->putObject(array(
-	                        'Bucket' => $selected_s3_bucket,
-	                        'Key'    => $file,
-	                        'SourceFile' => $wp_upload_dir['basedir']."/".$file
-	                    ));
+				            $keyPrefix = '';
+				            $options = array(
+				                // 'params'      => array('ACL' => 'public-read'),
+				                'concurrency' => 20,
+				                'debug'       => true
+				            );
 
-	                }
+							// Download missing files
+			                foreach($missing_locally as $file){
 
-					echo "<h3>Sync complete</h3>";
-					echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Reload</a><br><br>";
+								//Check to see if the missing $file is actually a folder
+								$ext = pathinfo($file, PATHINFO_EXTENSION);
+
+								//Check to see if the directory exists
+								if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file))) {
+									mkdir(dirname($wp_upload_dir['basedir']."/".$file),0755, true);
+								};
+
+								//If the $file isn't a folder download it
+								if($ext != ""){
+									$result = $s3->getObject([
+									   'Bucket' => $selected_s3_bucket,
+									   'Key'    => $file,
+									   'SaveAs' => $wp_upload_dir['basedir']."/".$file
+								    ]);
+								}
+
+			                }
+
+							// Upload missing files
+			                foreach($missing_remotely as $file){
+
+			                    $result = $s3->putObject(array(
+			                        'Bucket' => $selected_s3_bucket,
+			                        'Key'    => $file,
+			                        'SourceFile' => $wp_upload_dir['basedir']."/".$file
+			                    ));
+
+			                }
+
+							echo "<h3>Sync complete</h3>";
+							echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Reload</a><br><br>";
 
 
-	            } catch (Aws\S3\Exception\S3Exception $e) {
-	                echo "There was an error uploading the file.<br><br> Exception: $e";
-	            }
-	        }
+			            } catch (Aws\S3\Exception\S3Exception $e) {
+			                echo "There was an error uploading the file.<br><br> Exception: $e";
+			            }
+			        }
+				} catch (S3Exception $e) {
+
+					echo "<h3>There was an issue with the connecting to the selected bucket. Make sure it's in the selected region (".AWS_REGION.")</h3>";
+					// echo $e->getMessage() . "\n";
+
+				}
+
+
 			echo "</div>";
-		};
+		} else {
+
+		// if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
+		//
+		// };
+
+		// echo "";
 
 
+		}
 
-		if($selected_s3_bucket == ""){
-			echo "<div class='wrap section visible_section'>";
-		}else{
+		if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
 			echo "<div class='wrap section'>";
+		}else{
+			echo "<div class='wrap section visible_section'>";
 		};
 
 		?>
-
 
 				<form method="post" action="options.php">
 					<?php
@@ -448,14 +472,6 @@ class DevelopmentSyncing {
 						submit_button();
 					?>
 				</form>
-
-				<!-- <h1>Create a bucket</h1>
-
-				<form method="POST">
-					<label for="awesome_text">Awesome Text</label>
-					<input type="text" name="awesome_text" id="awesome_text" value="">
-					<input type="submit" value="Save" class="button button-primary button-large">
-				</form> -->
 
 			</div>
 		<?php
