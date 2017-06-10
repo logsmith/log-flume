@@ -20,9 +20,20 @@
         nonce = $(this).attr("data-nonce")
         url = $(this).attr("href")
 
+        $(this).remove();
 
-        console.log(nonce)
-        console.log(url)
+
+        $('.column-location').text('Synced');
+
+
+        // if (!$('body').hasClass( "syncing" ) ) {
+
+        $('#the-list').empty();
+        $('.tablenav-pages').empty();
+        $('body').addClass('syncing');
+
+        // }
+
 
         $.ajax({
             type : "post",
@@ -30,15 +41,26 @@
             url : url,
             data : {action: "log_flume_transfer", post_id : post_id, nonce: nonce},
             success: function(response) {
+                // console.log(response);
                 if(response.type == "success") {
-                    // response.variable
-                }
-                else {
+
+                    response.files.forEach(function(file){
+
+                        // $('td:contains('+ file +')').css('background-color', 'red');
+
+                        $('#the-list').append('<tr><td class="file column-file has-row-actions column-primary" data-colname="Files">'+file+'</td><td><span class="dashicons dashicons-yes"></span></td></tr>');
+
+
+                    })
+
+                } else {
                     alert("Error :(")
                 }
             }
         })
 
     })
+
+
 
 })( jQuery );

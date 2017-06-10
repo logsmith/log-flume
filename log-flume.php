@@ -172,9 +172,16 @@ class DevelopmentSyncing {
 
 	function log_flume_transfer_ajax() {
 
+		$wp_upload_dir = wp_upload_dir();
+
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
 		}
+
+		// These need to be reduced
+		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
+
+		$missing_files = $this->find_files_to_sync();
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
@@ -194,8 +201,11 @@ class DevelopmentSyncing {
 				'debug'       => true
 			);
 
+
+			$synced_files = array();
+
 			// Download missing files
-			foreach($missing_locally as $file){
+			foreach($missing_files['missing_locally'] as $file){
 
 				//Check to see if the missing $file is actually a folder
 				$ext = pathinfo($file, PATHINFO_EXTENSION);
@@ -213,11 +223,12 @@ class DevelopmentSyncing {
 					   'SaveAs' => $wp_upload_dir['basedir']."/".$file
 					]);
 				}
+				$synced_files['files'][] = $file;
 
 			}
 
 			// Upload missing files
-			foreach($missing_remotely as $file){
+			foreach($missing_files['missing_remotely'] as $file){
 
 				$result = $s3->putObject(array(
 					'Bucket' => $selected_s3_bucket,
@@ -225,27 +236,36 @@ class DevelopmentSyncing {
 					'SourceFile' => $wp_upload_dir['basedir']."/".$file
 				));
 
+				$synced_files['files'][] = $file;
+
 			}
 
-			echo "<h3>Sync complete</h3>";
-			echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Back</a><br><br>";
 
 
 		} catch (Aws\S3\Exception\S3Exception $e) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
+		$synced_files['type'] = 'success';
 
+
+		// $result = json_encode($synced_files);
+		// echo $result;
+
+
+		// die();
 		if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-			$result = json_encode($result);
+			$result = json_encode($synced_files);
 			echo $result;
 		}
 		else {
 			header("Location: ".$_SERVER["HTTP_REFERER"]);
 		}
 
-		die();
 
+
+
+		die();
 	}
 
 	function my_must_login() {
@@ -253,8 +273,10 @@ class DevelopmentSyncing {
 	   die();
 	}
 
+
 	function find_files_to_sync(){
 
+		// These need to be reduced
 		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
 
 		$ignore = array("DS_Store","htaccess");
@@ -337,7 +359,13 @@ class DevelopmentSyncing {
 			}
 		}
 
-		return $missing_display;
+
+		$missing_files = array();
+		$missing_files['missing_locally'] = $missing_locally;
+		$missing_files['missing_remotely'] = $missing_remotely;
+		$missing_files['display'] = $missing_display;
+
+		return $missing_files;
 
 	}
 
@@ -380,7 +408,7 @@ class DevelopmentSyncing {
             return;
         };
 
-
+		// These need to be reduced
 		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
 
 
@@ -437,7 +465,7 @@ class DevelopmentSyncing {
 								<div class="meta-box-sortables ui-sortable">
 									<form method="post">
 										<?php
-										$this->entry_obj->prepare_items($missing_display);
+										$this->entry_obj->prepare_items($missing_display['display']);
 										$this->entry_obj->display(); ?>
 									</form>
 								</div>
