@@ -1,5 +1,8 @@
 # Changelog
 
+= 0.0.13 =
+* Version sync
+
 = 0.0.12 =
 * Worked on warnings for bad AWS credentials
 
