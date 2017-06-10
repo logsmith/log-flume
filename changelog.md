@@ -1,5 +1,8 @@
 # Changelog
 
+= 0.0.15 =
+* Added .htaccess to ignore list
+
 = 0.0.14 =
 * Tweaked js and css classes
 
