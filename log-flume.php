@@ -247,7 +247,7 @@ class DevelopmentSyncing {
 			echo "<div class='wrap section log_flume_section log_flume_visible_section'>";
 
 
-		        $ignore = array("DS_Store");
+		        $ignore = array("DS_Store","htaccess");
 
 		        // Instantiate an Amazon S3 client.
 		        $s3 = new S3Client([
