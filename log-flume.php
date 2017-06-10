@@ -331,6 +331,10 @@ class DevelopmentSyncing {
 
 					if(!isset($_GET['sync'])){
 
+						if( count($missing_display) == 0 ){
+							echo "<h2 style='margin-top:40px;'>All files are in sync with AWS.</h2>";
+						};
+
 				        ?>
 				        <div id="poststuff">
 							<div id="post-body" class="metabox-holder columns-3">
@@ -459,7 +463,7 @@ class Media_List extends WP_List_Table {
 
 
 	public function no_items() {
-		_e( 'No files found.', 'sp' );
+		_e( 'No files to sync 😎', 'sp' );
 	}
 
 
