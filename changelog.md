@@ -1,5 +1,8 @@
 # Changelog
 
+= 0.0.14 =
+* Tweaked js and css classes
+
 = 0.0.13 =
 * Version sync
 
