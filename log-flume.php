@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.14
+Version: 0.0.15
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -26,6 +26,10 @@ class DevelopmentSyncing {
         add_action( 'load-upload.php', array($this, 'indexButton'));
         add_action( 'admin_menu', array($this, 'submenu') );
         add_action( 'admin_enqueue_scripts', array($this, 'tabs_js') );
+
+		// AJAX endpoint
+		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
+		add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
 
         $this->setup = true;
 
@@ -165,6 +169,32 @@ class DevelopmentSyncing {
 
 		$this->entry_obj = new Media_List();
 	}
+
+	function log_flume_transfer_ajax() {
+
+		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
+			exit("No naughty business please");
+		}
+
+
+		if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+			$result = json_encode($result);
+			echo $result;
+		}
+		else {
+			header("Location: ".$_SERVER["HTTP_REFERER"]);
+		}
+
+		die();
+
+	}
+
+	function my_must_login() {
+	   echo "You must log in to sync media";
+	   die();
+	}
+
+
 
     function admin_page() {
 
@@ -352,10 +382,15 @@ class DevelopmentSyncing {
 						</div>
 				        <?php
 
+
 						if( count($missing_display) > 0 ){
-							echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary'>Sync now</a>";
+
+							echo "<a href='".admin_url('admin-ajax.php?action=log_flume_transfer')."' class='button button-primary logflume_sync_media_button'
+							data-nonce='".wp_create_nonce("logflume_nonce")."'
+							>Sync now</a>";
+
 						}else{
-							echo "<a href='".admin_url('upload.php?page=log-flume&sync=1')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
+							echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
 						}
 
 					} else {
@@ -403,7 +438,7 @@ class DevelopmentSyncing {
 			                }
 
 							echo "<h3>Sync complete</h3>";
-							echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Reload</a><br><br>";
+							echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary'>Back</a><br><br>";
 
 
 			            } catch (Aws\S3\Exception\S3Exception $e) {

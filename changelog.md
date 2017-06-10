@@ -2,6 +2,8 @@
 
 = 0.0.15 =
 * Added .htaccess to ignore list
+* Clarified messaging
+* Started Ajax Syncing
 
 = 0.0.14 =
 * Tweaked js and css classes

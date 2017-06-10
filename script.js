@@ -12,16 +12,22 @@
     })
 
 
-    $(".trigger").click( function(e) {
+    $(".logflume_sync_media_button").click( function(e) {
+
         e.preventDefault()
 
-        post_id = $(this).attr("data-post_id")
+        post_id = ''
         nonce = $(this).attr("data-nonce")
+        url = $(this).attr("href")
+
+
+        console.log(nonce)
+        console.log(url)
 
         $.ajax({
             type : "post",
             dataType : "json",
-            url : log_flume.ajaxurl,
+            url : url,
             data : {action: "log_flume_transfer", post_id : post_id, nonce: nonce},
             success: function(response) {
                 if(response.type == "success") {
@@ -34,7 +40,5 @@
         })
 
     })
-
-
 
 })( jQuery );
