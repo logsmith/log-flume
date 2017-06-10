@@ -5,8 +5,8 @@
         $('.nav-tab').removeClass('nav-tab-active');
         $(this).addClass('nav-tab-active');
 
-        $('.section').removeClass('visible_section');
-        $('.section').eq($(this).index()).addClass('visible_section');
+        $('.log_flume_section').removeClass('log_flume_visible_section');
+        $('.log_flume_section').eq($(this).index()).addClass('log_flume_visible_section');
 
         return false;
     })

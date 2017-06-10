@@ -12,10 +12,12 @@ composer require logsmith/log-flume
 
 Add these constants to your wp-config.php file:
 
+- AWS_REGION
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 
 ```
+define('AWS_REGION','xxxxxx');
 define('AWS_ACCESS_KEY_ID','xxxxxx');
 define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 ```

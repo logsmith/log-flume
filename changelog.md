@@ -1,10 +1,19 @@
 # Changelog
 
+= 0.0.14 =
+* Tweaked js and css classes
+
+= 0.0.13 =
+* Version sync
+
+= 0.0.12 =
+* Worked on warnings for bad AWS credentials
+
 = 0.0.11 =
-*
+* Composer fixes
 
 = 0.0.10 =
-* Defined  an undefined array
+* Composer fixes
 
 = 0.0.9 =
 * Added a validation for the existence of AWS classes

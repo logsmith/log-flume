@@ -1,6 +1,7 @@
-.section{
+.log_flume_section{
     display: none;
 }
-.visible_section{
+
+.log_flume_visible_section{
     display: block;
 }
