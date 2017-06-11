@@ -508,10 +508,17 @@ class DevelopmentSyncing {
 
 					$missing_display = $this->find_files_to_sync();
 
-					// if(!isset($_GET['sync'])){
+					if( count($missing_display['display']) == 0 ){
+						echo "<h2 style='margin-top:20px;margin-bottom:20px;'>All files are in sync with AWS.</h2>";
+					}else{
+						echo "<h2 style='margin-top:20px;margin-bottom:20px;' class='total_files_to_sync'><strong>". count($missing_display['display']) ."</strong> files need syncing</h2>";
+					};
 
-					if( count($missing_display) == 0 ){
-						echo "<h2 style='margin-top:40px;'>All files are in sync with AWS.</h2>";
+
+					if( count($missing_display['display']) > 0 ){
+						echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
+						data-nonce='".wp_create_nonce("logflume_nonce")."'
+						>Sync now</a>";
 					};
 
 			        ?>
@@ -532,13 +539,13 @@ class DevelopmentSyncing {
 			        <?php
 
 
-					if( count($missing_display) > 0 ){
-						echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
-						data-nonce='".wp_create_nonce("logflume_nonce")."'
-						>Sync now</a>";
-					}else{
-						echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
-					}
+					// if( count($missing_display) > 0 ){
+					// 	echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
+					// 	data-nonce='".wp_create_nonce("logflume_nonce")."'
+					// 	>Sync now</a>";
+					// }else{
+					// 	echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
+					// }
 
 					// } else {
 					//

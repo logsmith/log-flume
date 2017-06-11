@@ -45,7 +45,7 @@
                     // alert("success :)")
 
                     response.files.display.forEach(function(entry){
-                        $('#the-list').append('<tr class="animated fadeInUp"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+entry.file+'</td><td class="sync_col">Syncing...</span></td></tr>');
+                        $('#the-list').append('<tr class="animated fadeInUp"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+entry.file+'</td><td class="sync_col">Syncing...<span class="syncing_check"></span></td></tr>');
                     })
 
                     // console.log(response.files);
@@ -81,15 +81,29 @@
                     response.files.forEach(function(file){
 
                         $( "td:contains('"+file+"')" ).parent().children('.sync_col').html('<span class="dashicons dashicons-yes"></span>');
-                        console.log(file);
+                        // console.log(file);
 
                     })
+
+                    check_all_synced();
 
                 } else {
                     // alert("Error :(")
                 }
             }
         })
+    }
+
+    function check_all_synced(){
+        // alert("Error :(")
+        console.log($('.syncing_check').length);
+
+        if($('.syncing_check').length != 0){
+            $('.total_files_to_sync').html( "<strong>" + $('.syncing_check').length + "</strong> files left to sync" );
+        }else{
+            $('.total_files_to_sync').html( "<strong>All files synced 😎</strong>" );
+        }
+
     }
 
 })( jQuery );
