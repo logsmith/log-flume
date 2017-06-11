@@ -29,7 +29,7 @@ class DevelopmentSyncing {
 
 		// AJAX endpoint
 		add_action( "wp_ajax_log_flume_file_list", array($this, 'find_files_to_sync_ajax') );
-		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax_up') );
+		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
 
 		add_action( "wp_ajax_nopriv_log_flume_file_list", array($this, 'my_must_login') );
 		add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
@@ -174,7 +174,7 @@ class DevelopmentSyncing {
 		$this->entry_obj = new Media_List();
 	}
 
-	function log_flume_transfer_ajax_up() {
+	function log_flume_transfer_ajax() {
 
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
@@ -197,6 +197,12 @@ class DevelopmentSyncing {
 		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
 
 		$missing_files = $_REQUEST['files'];
+
+		// echo "<pre>";
+		// print_r($missing_files);
+		// echo "</pre>";
+
+		// die();
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
@@ -222,15 +228,53 @@ class DevelopmentSyncing {
 			// Upload missing files
 			foreach($missing_files as $file){
 
-				$result = $s3->putObject(array(
-					'Bucket' => $selected_s3_bucket,
-					'Key'    => $file,
-					'SourceFile' => $wp_upload_dir['basedir']."/".$file
-				));
 
-				$results['files'][] = $file;
+				// $results['files'] = $_REQUEST['files'];
+
+				if( $file['location'] == 'remote'){
+
+					// foreach($missing_files['missing_locally'] as $file){
+
+					//Check to see if the missing $file is actually a folder
+					$ext = pathinfo($file['file'], PATHINFO_EXTENSION);
+
+					//Check to see if the directory exists
+					if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file['file']))) {
+						mkdir(dirname($wp_upload_dir['basedir']."/".$file['file']),0755, true);
+					};
+
+					//If the $file isn't a folder download it
+					if($ext != ""){
+						$result = $s3->getObject([
+						   'Bucket' => $selected_s3_bucket,
+						   'Key'    => $file['file'],
+						   'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
+						]);
+					}
+					$results['files'][] = $file['file'];
+
+					// }
+
+				}
+
+				if( $file['location'] == 'local'){
+
+					$result = $s3->putObject(array(
+						'Bucket' => $selected_s3_bucket,
+						'Key'    => $file['file'],
+						'SourceFile' => $wp_upload_dir['basedir']."/".$file['file']
+					));
+
+					$results['files'][] = $file['file'];
+
+				}
+				// echo "<pre>";
+				// print_r($file);
+				// echo "</pre>";
+
 
 			}
+			// die();
 
 		} catch (Aws\S3\Exception\S3Exception $e) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
@@ -256,93 +300,7 @@ class DevelopmentSyncing {
 		die();
 	}
 
-	function log_flume_transfer_ajax_down() {
 
-		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
-			exit("No naughty business please");
-		}
-
-		$wp_upload_dir = wp_upload_dir();
-
-
-		$results['type'] = 'success';
-		$results['files'] = $_REQUEST['files'];
-
-		echo json_encode($results);
-
-		die();
-
-		// These need to be reduced
-		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
-
-		$missing_files = $this->find_files_to_sync();
-
-		$s3 = new S3Client([
-			'version'     => 'latest',
-			'region'      => AWS_REGION,
-			'credentials' => [
-				'key'    => AWS_ACCESS_KEY_ID,
-				'secret' => AWS_SECRET_ACCESS_KEY,
-			],
-		]);
-
-		try {
-
-			$keyPrefix = '';
-			$options = array(
-				// 'params'      => array('ACL' => 'public-read'),
-				'concurrency' => 20,
-				'debug'       => true
-			);
-
-
-			$synced_files = array();
-
-			// Download missing files
-			foreach($missing_files['missing_locally'] as $file){
-
-				//Check to see if the missing $file is actually a folder
-				$ext = pathinfo($file, PATHINFO_EXTENSION);
-
-				//Check to see if the directory exists
-				if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file))) {
-					mkdir(dirname($wp_upload_dir['basedir']."/".$file),0755, true);
-				};
-
-				//If the $file isn't a folder download it
-				if($ext != ""){
-					$result = $s3->getObject([
-					   'Bucket' => $selected_s3_bucket,
-					   'Key'    => $file,
-					   'SaveAs' => $wp_upload_dir['basedir']."/".$file
-					]);
-				}
-				$synced_files['files'][] = $file;
-
-			}
-
-		} catch (Aws\S3\Exception\S3Exception $e) {
-			echo "There was an error uploading the file.<br><br> Exception: $e";
-		}
-
-		// $synced_files['type'] = 'success';
-
-
-		// $result = json_encode($synced_files);
-		// echo $result;
-
-
-		// die();
-		if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-			$result = json_encode($synced_files);
-			echo $result;
-		}
-		else {
-			header("Location: ".$_SERVER["HTTP_REFERER"]);
-		}
-
-		die();
-	}
 
 	function my_must_login() {
 	   echo "You must log in to sync media";

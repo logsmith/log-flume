@@ -49,10 +49,11 @@
                     })
 
                     // console.log(response.files);
+                    // console.log(response.files.display.length);
 
                     var i,j,temparray,chunk = 6;
-                    for (i=0,j=response.files.missing_remotely.length; i<j; i+=chunk) {
-                        batch = response.files.missing_remotely.slice(i,i+chunk);
+                    for (i=0,j=response.files.display.length; i<j; i+=chunk) {
+                        batch = response.files.display.slice(i,i+chunk);
                         // console.log(batch);
                         transfer_batch(batch);
                     }
@@ -89,10 +90,6 @@
                 }
             }
         })
-
-
     }
-
-
 
 })( jQuery );
