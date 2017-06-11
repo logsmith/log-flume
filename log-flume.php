@@ -28,7 +28,10 @@ class DevelopmentSyncing {
         add_action( 'admin_enqueue_scripts', array($this, 'tabs_js') );
 
 		// AJAX endpoint
+		add_action( "wp_ajax_log_flume_file_list", array($this, 'find_files_to_sync_ajax') );
 		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
+
+		add_action( "wp_ajax_nopriv_log_flume_file_list", array($this, 'my_must_login') );
 		add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
 
         $this->setup = true;
@@ -55,6 +58,7 @@ class DevelopmentSyncing {
     function tabs_js() {
         wp_enqueue_script( 'log_flume_js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0.0', true );
 		wp_enqueue_style( 'log_flume_css', plugin_dir_url( __FILE__ ) . 'styles.css' );
+		wp_enqueue_style( 'log_flume_animate_css', "https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.css" );
     }
 
 	//ASTODO - pretty this doesn't need to be a function
@@ -172,11 +176,19 @@ class DevelopmentSyncing {
 
 	function log_flume_transfer_ajax() {
 
-		$wp_upload_dir = wp_upload_dir();
-
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
 		}
+
+		$wp_upload_dir = wp_upload_dir();
+
+
+		$results['type'] = 'success';
+		$results['files'] = $_REQUEST['files'];
+
+		echo json_encode($results);
+
+		die();
 
 		// These need to be reduced
 		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
@@ -230,11 +242,11 @@ class DevelopmentSyncing {
 			// Upload missing files
 			foreach($missing_files['missing_remotely'] as $file){
 
-				$result = $s3->putObject(array(
-					'Bucket' => $selected_s3_bucket,
-					'Key'    => $file,
-					'SourceFile' => $wp_upload_dir['basedir']."/".$file
-				));
+				// $result = $s3->putObject(array(
+				// 	'Bucket' => $selected_s3_bucket,
+				// 	'Key'    => $file,
+				// 	'SourceFile' => $wp_upload_dir['basedir']."/".$file
+				// ));
 
 				$synced_files['files'][] = $file;
 
@@ -246,7 +258,7 @@ class DevelopmentSyncing {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
-		$synced_files['type'] = 'success';
+		// $synced_files['type'] = 'success';
 
 
 		// $result = json_encode($synced_files);
@@ -261,9 +273,6 @@ class DevelopmentSyncing {
 		else {
 			header("Location: ".$_SERVER["HTTP_REFERER"]);
 		}
-
-
-
 
 		die();
 	}
@@ -368,6 +377,24 @@ class DevelopmentSyncing {
 		return $missing_files;
 
 	}
+
+	function find_files_to_sync_ajax(){
+
+		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
+			exit("No naughty business please");
+		}
+
+		$result['files'] = $this->find_files_to_sync();
+		$result['type'] = 'success';
+
+		$result = json_encode($result);
+
+		echo $result;
+
+		die();
+
+	}
+
 
     function admin_page() {
 
@@ -477,7 +504,7 @@ class DevelopmentSyncing {
 
 
 					if( count($missing_display) > 0 ){
-						echo "<a href='".admin_url('admin-ajax.php?action=log_flume_transfer')."' class='button button-primary logflume_sync_media_button'
+						echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
 						data-nonce='".wp_create_nonce("logflume_nonce")."'
 						>Sync now</a>";
 					}else{

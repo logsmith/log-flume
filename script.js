@@ -20,46 +20,77 @@
         nonce = $(this).attr("data-nonce")
         url = $(this).attr("href")
 
+        // remove sync button
         $(this).remove();
 
-
+        // Change column name
         $('.column-location').text('Synced');
 
-
-        // if (!$('body').hasClass( "syncing" ) ) {
-
+        // dump table contents
         $('#the-list').empty();
+
+        // dump old nav buttons
         $('.tablenav-pages').empty();
         $('body').addClass('syncing');
-
-        // }
 
 
         $.ajax({
             type : "post",
             dataType : "json",
             url : url,
-            data : {action: "log_flume_transfer", post_id : post_id, nonce: nonce},
+            data : {action: "log_flume_file_list", nonce: nonce},
+            success: function(response) {
+                // console.log(response);
+                if(response.type == "success") {
+                    // alert("success :)")
+
+                    response.files.display.forEach(function(entry){
+
+                        $('#the-list').append('<tr class="animated fadeInUp"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+entry.file+'</td><td>Syncing...</span></td></tr>');
+
+                    })
+
+                    var i,j,temparray,chunk = 10;
+                    for (i=0,j=response.files.display.length; i<j; i+=chunk) {
+                        batch = response.files.display.slice(i,i+chunk);
+                        // console.log(temparray);
+                        transfer_batch(batch);
+                    }
+
+                } else {
+                    // alert("Error :(")
+                }
+            }
+        })
+
+    })
+
+    function transfer_batch(files){
+        // console.log(files)
+
+        $.ajax({
+            type : "post",
+            dataType : "json",
+            url : url,
+            data : {action: "log_flume_transfer", files : files, nonce: nonce},
             success: function(response) {
                 // console.log(response);
                 if(response.type == "success") {
 
                     response.files.forEach(function(file){
 
-                        // $('td:contains('+ file +')').css('background-color', 'red');
-
-                        $('#the-list').append('<tr><td class="file column-file has-row-actions column-primary" data-colname="Files">'+file+'</td><td><span class="dashicons dashicons-yes"></span></td></tr>');
-
+                        $('#the-list').append('<tr class="animated headShake"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+file+'</td><td><span class="dashicons dashicons-yes"></span></td></tr>');
 
                     })
 
                 } else {
-                    alert("Error :(")
+                    // alert("Error :(")
                 }
             }
         })
 
-    })
+
+    }
 
 
 
