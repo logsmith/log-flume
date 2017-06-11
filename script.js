@@ -45,15 +45,15 @@
                     // alert("success :)")
 
                     response.files.display.forEach(function(entry){
-
-                        $('#the-list').append('<tr class="animated fadeInUp"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+entry.file+'</td><td>Syncing...</span></td></tr>');
-
+                        $('#the-list').append('<tr class="animated fadeInUp"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+entry.file+'</td><td class="sync_col">Syncing...</span></td></tr>');
                     })
 
-                    var i,j,temparray,chunk = 10;
-                    for (i=0,j=response.files.display.length; i<j; i+=chunk) {
-                        batch = response.files.display.slice(i,i+chunk);
-                        // console.log(temparray);
+                    // console.log(response.files);
+
+                    var i,j,temparray,chunk = 6;
+                    for (i=0,j=response.files.missing_remotely.length; i<j; i+=chunk) {
+                        batch = response.files.missing_remotely.slice(i,i+chunk);
+                        // console.log(batch);
                         transfer_batch(batch);
                     }
 
@@ -79,7 +79,8 @@
 
                     response.files.forEach(function(file){
 
-                        $('#the-list').append('<tr class="animated headShake"><td class="file column-file has-row-actions column-primary" data-colname="Files">'+file+'</td><td><span class="dashicons dashicons-yes"></span></td></tr>');
+                        $( "td:contains('"+file+"')" ).parent().children('.sync_col').html('<span class="dashicons dashicons-yes"></span>');
+                        console.log(file);
 
                     })
 

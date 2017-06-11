@@ -29,7 +29,7 @@ class DevelopmentSyncing {
 
 		// AJAX endpoint
 		add_action( "wp_ajax_log_flume_file_list", array($this, 'find_files_to_sync_ajax') );
-		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
+		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax_up') );
 
 		add_action( "wp_ajax_nopriv_log_flume_file_list", array($this, 'my_must_login') );
 		add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
@@ -174,7 +174,89 @@ class DevelopmentSyncing {
 		$this->entry_obj = new Media_List();
 	}
 
-	function log_flume_transfer_ajax() {
+	function log_flume_transfer_ajax_up() {
+
+		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
+			exit("No naughty business please");
+		}
+
+		$wp_upload_dir = wp_upload_dir();
+
+		// $results['files'] = $_REQUEST['files'];
+
+
+		// echo "<pre>";
+		// print_r($results['files']);
+		// echo "</pre>";
+		//
+		//
+		//
+		// die();
+
+		// These need to be reduced
+		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
+
+		$missing_files = $_REQUEST['files'];
+
+		$s3 = new S3Client([
+			'version'     => 'latest',
+			'region'      => AWS_REGION,
+			'credentials' => [
+				'key'    => AWS_ACCESS_KEY_ID,
+				'secret' => AWS_SECRET_ACCESS_KEY,
+			],
+		]);
+
+		try {
+
+			$keyPrefix = '';
+			$options = array(
+				// 'params'      => array('ACL' => 'public-read'),
+				'concurrency' => 20,
+				'debug'       => true
+			);
+
+
+			$synced_files = array();
+
+			// Upload missing files
+			foreach($missing_files as $file){
+
+				$result = $s3->putObject(array(
+					'Bucket' => $selected_s3_bucket,
+					'Key'    => $file,
+					'SourceFile' => $wp_upload_dir['basedir']."/".$file
+				));
+
+				$results['files'][] = $file;
+
+			}
+
+		} catch (Aws\S3\Exception\S3Exception $e) {
+			echo "There was an error uploading the file.<br><br> Exception: $e";
+		}
+
+		$results['type'] = 'success';
+
+		echo json_encode($results);
+
+		// $result = json_encode($synced_files);
+		// echo $result;
+
+
+		// die();
+		// if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+		// 	$result = json_encode($synced_files);
+		// 	echo $result;
+		// }
+		// else {
+		// 	header("Location: ".$_SERVER["HTTP_REFERER"]);
+		// }
+
+		die();
+	}
+
+	function log_flume_transfer_ajax_down() {
 
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
@@ -238,21 +320,6 @@ class DevelopmentSyncing {
 				$synced_files['files'][] = $file;
 
 			}
-
-			// Upload missing files
-			foreach($missing_files['missing_remotely'] as $file){
-
-				// $result = $s3->putObject(array(
-				// 	'Bucket' => $selected_s3_bucket,
-				// 	'Key'    => $file,
-				// 	'SourceFile' => $wp_upload_dir['basedir']."/".$file
-				// ));
-
-				$synced_files['files'][] = $file;
-
-			}
-
-
 
 		} catch (Aws\S3\Exception\S3Exception $e) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
@@ -367,6 +434,10 @@ class DevelopmentSyncing {
 				);
 			}
 		}
+
+		// reset array keys
+		$missing_locally = array_values($missing_locally);
+		$missing_remotely = array_values($missing_remotely);
 
 
 		$missing_files = array();
