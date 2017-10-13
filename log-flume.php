@@ -28,11 +28,11 @@ class DevelopmentSyncing {
         add_action( 'admin_enqueue_scripts', array($this, 'tabs_js') );
 
 		// AJAX endpoint
-		add_action( "wp_ajax_log_flume_file_list", array($this, 'find_files_to_sync_ajax') );
-		add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
+		// add_action( "wp_ajax_log_flume_file_list", array($this, 'find_files_to_sync_ajax') );
+		// add_action( "wp_ajax_log_flume_transfer", array($this, 'log_flume_transfer_ajax') );
 
-		add_action( "wp_ajax_nopriv_log_flume_file_list", array($this, 'my_must_login') );
-		add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
+		// add_action( "wp_ajax_nopriv_log_flume_file_list", array($this, 'my_must_login') );
+		// add_action( "wp_ajax_nopriv_log_flume_transfer", array($this, 'my_must_login') );
 
         $this->setup = true;
 
@@ -51,9 +51,18 @@ class DevelopmentSyncing {
 
         add_action("admin_init", array($this, 'display_theme_panel_fields' ));
 
+		// add_action("init", array($this, 'add_cli_commands' ));
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			WP_CLI::add_command( 'logflume sync', array($this ,'log_flume_transfer') );
+        };
+
 
     }
 
+	// function add_cli_commands(){
+	// 	// WP_CLI::add_command( 'logflume sync', array($this ,'log_flume_transfer') );
+	// }
 
     function tabs_js() {
         wp_enqueue_script( 'log_flume_js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0.0', true );
@@ -174,7 +183,7 @@ class DevelopmentSyncing {
 		$this->entry_obj = new Media_List();
 	}
 
-	function log_flume_transfer_ajax() {
+	function log_flume_transfer() {
 
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
@@ -296,16 +305,20 @@ class DevelopmentSyncing {
 		// else {
 		// 	header("Location: ".$_SERVER["HTTP_REFERER"]);
 		// }
+		//
+
+
+		// WP_CLI::error( "Could not delete '$key' option. Does it exist?" );
+		//
+		// WP_CLI::success( "Deleted '$key' option." );
 
 		die();
 	}
 
-
-
-	function my_must_login() {
-	   echo "You must log in to sync media";
-	   die();
-	}
+	// function my_must_login() {
+	//    echo "You must log in to sync media";
+	//    die();
+	// }
 
 
 	function find_files_to_sync(){
@@ -407,22 +420,22 @@ class DevelopmentSyncing {
 
 	}
 
-	function find_files_to_sync_ajax(){
-
-		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
-			exit("No naughty business please");
-		}
-
-		$result['files'] = $this->find_files_to_sync();
-		$result['type'] = 'success';
-
-		$result = json_encode($result);
-
-		echo $result;
-
-		die();
-
-	}
+	// function find_files_to_sync_ajax(){
+	//
+	// 	if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
+	// 		exit("No naughty business please");
+	// 	}
+	//
+	// 	$result['files'] = $this->find_files_to_sync();
+	// 	$result['type'] = 'success';
+	//
+	// 	$result = json_encode($result);
+	//
+	// 	echo $result;
+	//
+	// 	die();
+	//
+	// }
 
 
     function admin_page() {
@@ -444,7 +457,7 @@ class DevelopmentSyncing {
             echo "Looks like you need to add these Constants to your config file:";
 
             echo "<pre>";
-                echo "define('AWS_REGION','');\n";
+                echo "define('AWS_REGION','eu-west-2'); //eu-west-2 is london\n";
                 echo "define('AWS_ACCESS_KEY_ID','');\n";
                 echo "define('AWS_SECRET_ACCESS_KEY','');";
             echo "</pre>";
@@ -496,95 +509,68 @@ class DevelopmentSyncing {
         </h2>
         <?php
 
+			// Don't render any bucket options if a bucket isn't selected
+			if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
+				echo "<div class='wrap section log_flume_section log_flume_visible_section'>";
 
-		// Don't render any bucket options if a bucket isn't selected
-		if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
-			echo "<div class='wrap section log_flume_section log_flume_visible_section'>";
+					try {
 
+						$missing_display = $this->find_files_to_sync();
 
+						if( count($missing_display['display']) == 0 ){
+							echo "<h2 style='margin-top:20px;margin-bottom:20px;'>All files are in sync with AWS.</h2>";
+						}else{
+							echo "<h2 style='margin-top:20px;margin-bottom:20px;' class='total_files_to_sync'><strong>". count($missing_display['display']) ."</strong> files need syncing</h2>";
+						};
 
-				try {
-
-
-					$missing_display = $this->find_files_to_sync();
-
-					if( count($missing_display['display']) == 0 ){
-						echo "<h2 style='margin-top:20px;margin-bottom:20px;'>All files are in sync with AWS.</h2>";
-					}else{
-						echo "<h2 style='margin-top:20px;margin-bottom:20px;' class='total_files_to_sync'><strong>". count($missing_display['display']) ."</strong> files need syncing</h2>";
-					};
-
-
-					if( count($missing_display['display']) > 0 ){
-						echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
-						data-nonce='".wp_create_nonce("logflume_nonce")."'
-						>Sync now</a>";
-					};
-
-			        ?>
-			        <div id="poststuff">
-						<div id="post-body" class="metabox-holder columns-3">
-							<div id="post-body-content">
-								<div class="meta-box-sortables ui-sortable">
-									<form method="post">
-										<?php
-										$this->entry_obj->prepare_items($missing_display['display']);
-										$this->entry_obj->display(); ?>
-									</form>
+				        ?>
+				        <div id="poststuff">
+							<div id="post-body" class="metabox-holder columns-3">
+								<div id="post-body-content">
+									<div class="meta-box-sortables ui-sortable">
+										<form method="post">
+											<?php
+											$this->entry_obj->prepare_items($missing_display['display']);
+											$this->entry_obj->display(); ?>
+										</form>
+									</div>
 								</div>
 							</div>
+							<br class="clear">
 						</div>
-						<br class="clear">
-					</div>
-			        <?php
+				        <?php
+
+					} catch (S3Exception $e) {
+
+						echo "<h3>There was an issue with the connecting to AWS bucket. Make sure it's in the selected region (".AWS_REGION.")</h3>";
+
+					}
+
+				echo "</div>";
+			};
+
+			if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
+				echo "<div class='wrap section log_flume_section'>";
+			}else{
+				echo "<div class='wrap section log_flume_section log_flume_visible_section'>";
+			};
+
+			?>
+			<form method="post" action="options.php">
+				<?php
+					settings_fields("section");
+					do_settings_sections("theme-options");
+					submit_button('Select AWS bucket');
 
 
-					// if( count($missing_display) > 0 ){
-					// 	echo "<a href='".admin_url('admin-ajax.php')."' class='button button-primary logflume_sync_media_button'
-					// 	data-nonce='".wp_create_nonce("logflume_nonce")."'
-					// 	>Sync now</a>";
-					// }else{
-					// 	echo "<a href='".admin_url('upload.php?page=log-flume')."' class='button button-primary disabled'>Sync now - No files to sync</a>";
-					// }
+					// settings_fields("section");
+					// do_settings_sections("logflume_create_options");
+					// submit_button('Create AWS bucket');
 
-					// } else {
-					//
-			        // }
-
-				} catch (S3Exception $e) {
-
-					echo "<h3>There was an issue with the connecting to AWS bucket. Make sure it's in the selected region (".AWS_REGION.")</h3>";
-					// echo $e->getMessage() . "\n";
-
-				}
-
-
-			echo "</div>";
-		};
-
-		if( $selected_s3_bucket != "" && $selected_s3_bucket != "select" ){
-			echo "<div class='wrap section log_flume_section'>";
-		}else{
-			echo "<div class='wrap section log_flume_section log_flume_visible_section'>";
-		};
-
-		?>
-				<form method="post" action="options.php">
-					<?php
-						settings_fields("section");
-						do_settings_sections("theme-options");
-						submit_button('Select AWS bucket');
-
-
-						// settings_fields("section");
-						// do_settings_sections("logflume_create_options");
-						// submit_button('Create AWS bucket');
-
-					?>
-				</form>
-			</div>
-		<?php
-
+				?>
+			</form>
+		</div>
+	<?php
     }
 }
 
