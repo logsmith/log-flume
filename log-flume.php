@@ -3,10 +3,12 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.0.15
+Version: 0.1.0
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
+
+require('vendor/autoload.php');
 
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
@@ -54,7 +56,8 @@ class DevelopmentSyncing {
 		// add_action("init", array($this, 'add_cli_commands' ));
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'logflume sync', array($this ,'log_flume_transfer') );
+			WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
+			WP_CLI::add_command( 'logflume sync-media', array($this ,'log_flume_transfer') );
         };
 
 
@@ -113,6 +116,7 @@ class DevelopmentSyncing {
 
     }
 
+	//KILL
 	function display_s3_selection(){
 
 	    $s3 = new S3Client([
@@ -172,7 +176,7 @@ class DevelopmentSyncing {
     public function screen_option() {
 
 		$option = 'per_page';
-		$args   = [
+		$args = [
 			'label'   => 'Entries',
 			'default' => 20,
 			'option'  => 'entries_per_page'
@@ -183,7 +187,79 @@ class DevelopmentSyncing {
 		$this->entry_obj = new Media_List();
 	}
 
+	function cli_log_flume_select_bucket(){
+		// WP_CLI::success( "Deleted '$key' option." );
+
+		$selected = get_option('logflume_s3_select_bucket');
+
+
+		// Need to test if bucket has been selected
+		if($selected){
+
+		}
+
+
+		//https://make.wordpress.org/cli/handbook/internal-api/wp-cli-colorize/
+		// echo WP_CLI::colorize( "%bSuccess:%n");
+		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
+		// echo WP_CLI::colorize( "%Y:%n");
+
+
+		$s3 = new S3Client([
+			'version'     => 'latest',
+			'region'      => AWS_REGION,
+			'credentials' => [
+				'key'    => AWS_ACCESS_KEY_ID,
+				'secret' => AWS_SECRET_ACCESS_KEY,
+			],
+		]);
+
+		$connected_to_S3 = true;
+
+		try {
+			$result = $s3->listBuckets(array());
+		}
+
+		//catch exception
+		catch(Aws\S3\Exception\S3Exception $e) {
+			$connected_to_S3 = false;
+			// echo 'Message: ' .$e->getMessage();
+		};
+
+
+		if($connected_to_S3 == true){
+
+			foreach ($result['Buckets'] as $bucket) {
+
+				echo $bucket['Name'];
+
+				if($bucket['Name'] == $selected){
+					echo WP_CLI::colorize( "%r - currently selected%n");
+				};
+
+				echo "\n";
+			}
+
+		}else{
+
+			return WP_CLI::error( "Error connecting to Amazon S3, please check your credentials." );
+
+		}
+
+
+	}
+
 	function log_flume_transfer() {
+
+		$selected_s3_bucket = get_option('logflume_s3_select_bucket');
+
+
+		if($selected_s3_bucket == ""){
+			return WP_CLI::error( "There is currently no S3 bucket selected, please run `wp logflume select-bucket`" );
+		}
+
+
+		die();
 
 		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
 			exit("No naughty business please");
@@ -308,9 +384,6 @@ class DevelopmentSyncing {
 		//
 
 
-		// WP_CLI::error( "Could not delete '$key' option. Does it exist?" );
-		//
-		// WP_CLI::success( "Deleted '$key' option." );
 
 		die();
 	}
