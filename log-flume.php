@@ -8,7 +8,7 @@ Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
 
-require('vendor/autoload.php');
+// require('vendor/autoload.php');
 
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
@@ -19,7 +19,7 @@ class DevelopmentSyncing {
 
     function __construct() {
 
-        if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || !defined('AWS_REGION') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "" || AWS_REGION == "" ) {
+        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
 
             add_action( 'admin_notices', function(){
 				echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
@@ -62,10 +62,10 @@ class DevelopmentSyncing {
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => AWS_REGION,
+			'region'      => LOG_FLUME_REGION,
 			'credentials' => [
-				'key'    => AWS_ACCESS_KEY_ID,
-				'secret' => AWS_SECRET_ACCESS_KEY,
+				'key'    => LOG_FLUME_ACCESS_KEY_ID,
+				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
 			],
 		]);
 
@@ -121,10 +121,10 @@ class DevelopmentSyncing {
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => AWS_REGION,
+			'region'      => LOG_FLUME_REGION,
 			'credentials' => [
-				'key'    => AWS_ACCESS_KEY_ID,
-				'secret' => AWS_SECRET_ACCESS_KEY,
+				'key'    => LOG_FLUME_ACCESS_KEY_ID,
+				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
 			],
 		]);
 
@@ -215,10 +215,10 @@ class DevelopmentSyncing {
 		// Instantiate an Amazon S3 client.
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => AWS_REGION,
+			'region'      => LOG_FLUME_REGION,
 			'credentials' => [
-				'key'    => AWS_ACCESS_KEY_ID,
-				'secret' => AWS_SECRET_ACCESS_KEY,
+				'key'    => LOG_FLUME_ACCESS_KEY_ID,
+				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
 			],
 		]);
 
