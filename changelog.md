@@ -1,7 +1,8 @@
 # Changelog
 
 = 0.1.0 =
-* Removed of admin pages and switched to syncing over the CLI 
+* Removed of admin pages and switched to syncing over the CLI
+* Deleted all JS and CSS
 
 = 0.0.15 =
 * Added .htaccess to ignore list
