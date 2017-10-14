@@ -15,36 +15,23 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
-
 class DevelopmentSyncing {
 
-    private $setup;
-
     function __construct() {
-
-        $this->setup = true;
 
         if ( !defined('AWS_ACCESS_KEY_ID') || !defined('AWS_SECRET_ACCESS_KEY') || !defined('AWS_REGION') || AWS_ACCESS_KEY_ID == "" || AWS_SECRET_ACCESS_KEY == "" || AWS_REGION == "" ) {
 
             add_action( 'admin_notices', function(){
 				echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
 			} );
-            $this->setup = 'details';
 
         };
 
-		if ( ! class_exists( 'Aws\S3\S3Client' ) ) {
-            $this->setup = 'autoload';
-		}
-
-
-		// add_action("init", array($this, 'add_cli_commands' ));
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
-			WP_CLI::add_command( 'logflume sync-media', array($this ,'log_flume_transfer') );
+			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
         };
-
 
     }
 
@@ -59,7 +46,7 @@ class DevelopmentSyncing {
 		if( isset( $args[0] )){
 			$selected = $args[0];
 			update_option('logflume_s3_selected_bucket',$selected,0);
-			WP_CLI::success( "Secleted bucket updated" );
+			WP_CLI::success( "Selected bucket updated" );
 		};
 
 
@@ -71,11 +58,6 @@ class DevelopmentSyncing {
 		};
 
 		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
-
-
-		//https://make.wordpress.org/cli/handbook/internal-api/wp-cli-colorize/
-		// echo WP_CLI::colorize( "%bSuccess:%n");
-		// echo WP_CLI::colorize( "%Y:%n");
 
 
 		$s3 = new S3Client([
@@ -118,52 +100,24 @@ class DevelopmentSyncing {
 		}
 
 		if($selected_bucket_check == 0 && $selected != ""){
-
 			return WP_CLI::error( "There is a selected bucket (".$selected."), but it doesn't seem to exits on S3?" );
-
 		}
 
 	}
 
-	function log_flume_transfer() {
+	function cli_log_flume_transfer() {
 
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+		$wp_upload_dir = wp_upload_dir();
 
+		echo WP_CLI::colorize( "%YStarting to sync files%n\n");
 
+		//TODO Need to get a list of bucked and fact check the selected bucket exists.
 		if($selected_s3_bucket == ""){
 			return WP_CLI::error( "There is currently no S3 bucket selected, please run `wp logflume select-bucket`" );
 		}
 
-
-		die();
-
-		if ( !wp_verify_nonce( $_REQUEST['nonce'], "logflume_nonce")) {
-			exit("No naughty business please");
-		}
-
-		$wp_upload_dir = wp_upload_dir();
-
-		// $results['files'] = $_REQUEST['files'];
-
-
-		// echo "<pre>";
-		// print_r($results['files']);
-		// echo "</pre>";
-		//
-		//
-		//
-		// die();
-
-		// These need to be reduced
-		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
-
-		$missing_files = $_REQUEST['files'];
-
-		// echo "<pre>";
-		// print_r($missing_files);
-		// echo "</pre>";
-
-		// die();
+		$missing_files = $this->find_files_to_sync();
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
@@ -184,11 +138,9 @@ class DevelopmentSyncing {
 			);
 
 
-			$synced_files = array();
-
+			//TODO check count
 			// Upload missing files
-			foreach($missing_files as $file){
-
+			foreach($missing_files['display'] as $file){
 
 				// $results['files'] = $_REQUEST['files'];
 
@@ -229,26 +181,26 @@ class DevelopmentSyncing {
 					$results['files'][] = $file['file'];
 
 				}
-				// echo "<pre>";
-				// print_r($file);
-				// echo "</pre>";
+
+
+
+				echo WP_CLI::colorize( "%gSynced: ".$file['file']."%n");
+
+				if( $file['location'] == 'local' ){
+					echo WP_CLI::colorize( "%y - ⬆ uploaded to S3%n\n");
+				}else{
+					echo WP_CLI::colorize( "%y - ⬇ downloaded from S3%n\n");
+				}
 
 
 			}
-			// die();
 
 		} catch (Aws\S3\Exception\S3Exception $e) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
-		$results['type'] = 'success';
+		return WP_CLI::success( "Sync complete! 😎" );
 
-		echo json_encode($results);
-
-		// $result = json_encode($synced_files);
-
-
-		die();
 	}
 
 
@@ -305,8 +257,6 @@ class DevelopmentSyncing {
 			//This would be nicer to have this in the RecursiveIteratorIterator
 			if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
 				$found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
-				// echo $filetype['filename']." - ".str_replace($wp_upload_dir['basedir'].'/','',$path)."<br>";
-				// echo $filetype['filename']."<br>";
 			}
 
 		}
