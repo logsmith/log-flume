@@ -27,25 +27,12 @@ class DevelopmentSyncing {
 			WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
 			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
 			WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
-			WP_CLI::add_command( 'logflume create-buckets', array($this ,'create_buckets') );
+			WP_CLI::add_command( 'logflume setup', array($this ,'setup') );
         };
 
     }
 
-	function check_config_details_exist(){
-        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    function create_buckets($args){
-
-
-        if(! isset( $args[0] )){
-            return WP_CLI::error( "Please supply a bucket name 'wp logflume create-buckets <bucket-name>'" );
-		}
+	private function connect_to_s3(){
 
         $s3 = new S3Client([
             'version'     => 'latest',
@@ -56,19 +43,71 @@ class DevelopmentSyncing {
             ],
         ]);
 
+        return $s3;
+    }
+
+	function check_config_details_exist(){
+        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    function setup($args){
+
+        echo WP_CLI::colorize( "%YChecking to see if S3 dettails exist inside wp-config file...%n\n");
+
+        if( $this->check_config_details_exist() == false ){
+
+			echo WP_CLI::colorize( "%rS3 access details don't exist in your config files, so lets get started!%n\n" );
+
+            // View logflume Wiki
+            echo WP_CLI::colorize( "%rStep 1: %n");
+            echo WP_CLI::colorize( "%Y Visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
+
+            // Add config details
+            echo WP_CLI::colorize( "%rStep 2: %n");
+            echo WP_CLI::colorize( "%Y Add these new config details to your wp-config file:%n\n");
+            echo WP_CLI::colorize( "%Y         define('LOG_FLUME_REGION','eu-west-2'); // eu-west-2 is London%n\n");
+            echo WP_CLI::colorize( "%Y         define('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
+            echo WP_CLI::colorize( "%Y         define('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
+            echo WP_CLI::colorize( "%rStep 3: %n");
+            echo WP_CLI::colorize( "%Y Once these are in place, re-run 'wp logflume setup':%n\n");
+
+            return false;
+
+		}else{
+            echo WP_CLI::colorize( "%Y... Yes! config details exist! 🙂%n\n");
+        }
+
+        // if(! isset( $args[0] )){
+        //     return WP_CLI::error( "Please supply a bucket name 'wp logflume create-buckets <bucket-name>'" );
+		// }
+
+        $s3 = $this->connect_to_s3();
+
+        // Create standard logflume bucket
         try {
 
             $result = $s3->createBucket([
-                'Bucket' => $args[0]
+                'Bucket' => $args[0]."-logflume"
             ]);
 
-
         } catch (Aws\S3\Exception\S3Exception $e) {
-
             echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
-
         }
 
+        // Create backup bucket
+        try {
+
+            $result = $s3->createBucket([
+                'Bucket' => "-logflume-backup"
+            ]);
+
+        } catch (Aws\S3\Exception\S3Exception $e) {
+            echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+        }
 
     }
 
@@ -99,15 +138,7 @@ class DevelopmentSyncing {
 
 		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
 
-		$s3 = new S3Client([
-			'version'     => 'latest',
-			'region'      => LOG_FLUME_REGION,
-			'credentials' => [
-				'key'    => LOG_FLUME_ACCESS_KEY_ID,
-				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
-			],
-		]);
-
+        $s3 = $this->connect_to_s3();
 
 		try {
 			$result = $s3->listBuckets(array());
