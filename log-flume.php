@@ -8,8 +8,6 @@ Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
 
-// require('vendor/autoload.php');
-
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 use Aws\S3\S3Client;
@@ -19,22 +17,60 @@ class DevelopmentSyncing {
 
     function __construct() {
 
-        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
-
+		if( $this->check_config_details_exist() == true ){
             add_action( 'admin_notices', function(){
-				echo "<div class='notice notice-error'><p>Please complete the setup of <a href='".admin_url('upload.php?page=log-flume')."'>Log Flume</a></p></div>";
+				echo "<div class='notice notice-error'><p>Please complete the setup of Log Flume! There seems to be config details missing</p></div>";
 			} );
-
         };
-
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
 			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
+			WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
+			WP_CLI::add_command( 'logflume create-buckets', array($this ,'create_buckets') );
         };
 
     }
 
+	function check_config_details_exist(){
+        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    function create_buckets($args){
+
+
+        if(! isset( $args[0] )){
+            return WP_CLI::error( "Please supply a bucket name 'wp logflume create-buckets <bucket-name>'" );
+		}
+
+        $s3 = new S3Client([
+            'version'     => 'latest',
+            'region'      => LOG_FLUME_REGION,
+            'credentials' => [
+                'key'    => LOG_FLUME_ACCESS_KEY_ID,
+                'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
+            ],
+        ]);
+
+        try {
+
+            $result = $s3->createBucket([
+                'Bucket' => $args[0]
+            ]);
+
+
+        } catch (Aws\S3\Exception\S3Exception $e) {
+
+            echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+
+        }
+
+
+    }
 
 	function cli_log_flume_select_bucket($args){
 
@@ -42,23 +78,26 @@ class DevelopmentSyncing {
 		$selected_bucket_check = 0;
 		$selected = get_option('logflume_s3_selected_bucket');
 
+		if( $this->check_config_details_exist() == false ){
+			return WP_CLI::error( "Config details missing" );
+		}
+
 		// Check to see if there user is trying to set a specific bucket
 		if( isset( $args[0] )){
 			$selected = $args[0];
 			update_option('logflume_s3_selected_bucket',$selected,0);
 			WP_CLI::success( "Selected bucket updated" );
-		};
+		}
 
 
 		// Test if bucket has not yet been selected
 		if($selected == ""){
 			echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-			echo WP_CLI::colorize( "%r'wp logmsith select-bucket <bucket-name>'%n");
+			echo WP_CLI::colorize( "%r'wp logflume select-bucket <bucket-name>'%n");
 			echo WP_CLI::colorize( "%Y to select a bucket%n\n");
-		};
+		}
 
 		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
-
 
 		$s3 = new S3Client([
 			'version'     => 'latest',
@@ -110,15 +149,21 @@ class DevelopmentSyncing {
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
 
-		echo WP_CLI::colorize( "%YStarting to sync files%n\n");
 
-		//TODO Need to get a list of bucked and fact check the selected bucket exists.
+		if( $this->check_config_details_exist() == false ){
+			return WP_CLI::error( "Config details missing" );
+		}
+
 		if($selected_s3_bucket == ""){
 			return WP_CLI::error( "There is currently no S3 bucket selected, please run `wp logflume select-bucket`" );
 		}
 
+		echo WP_CLI::colorize( "%YStarting to sync files%n\n");
+
 		$missing_files = $this->find_files_to_sync();
 
+
+        //TODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
 			'region'      => LOG_FLUME_REGION,
@@ -203,7 +248,11 @@ class DevelopmentSyncing {
 
 	}
 
+    function backup_site() {
 
+        // $this->backup_database();
+
+    }
 
 	function find_files_to_sync(){
 
@@ -301,6 +350,24 @@ class DevelopmentSyncing {
 		return $missing_files;
 
 	}
+
+
+
+    function backup_database(){
+
+        // Check to see if the backup folder exists
+        if (!file_exists("wp-content/uploads/backups/")) {
+            mkdir("wp-content/uploads/backups/" ,0755);
+            echo "The directory 'wp-content/uploads/backups/' was successfully created.\n";
+        };
+
+        // Create a backup with a file name 'latest-backup'
+        $output = shell_exec('wp db export wp-content/uploads/backups/latest-backup.sql --allow-root');
+        // Create a backup with a file name involving the datestamp
+        $output = shell_exec('wp db export wp-content/uploads/backups/'. date('Y-m-d--h-i-s').'-backup.sql --allow-root');
+
+
+    }
 
 
 }
