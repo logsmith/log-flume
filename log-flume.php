@@ -24,10 +24,18 @@ class DevelopmentSyncing {
         };
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
-			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
-			WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
-			WP_CLI::add_command( 'logflume setup', array($this ,'setup') );
+
+
+            if($this->check_config_details_exist() == true){
+                WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
+    			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
+    			WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
+                WP_CLI::add_command( 'logflume setup', array($this ,'setup') );
+
+            }else{
+                WP_CLI::add_command( 'logflume', array($this ,'setup') );
+            }
+
         };
 
     }
@@ -56,11 +64,9 @@ class DevelopmentSyncing {
 
     function setup($args){
 
-        echo WP_CLI::colorize( "%YChecking to see if S3 dettails exist inside wp-config file...%n\n");
-
         if( $this->check_config_details_exist() == false ){
 
-			echo WP_CLI::colorize( "%rS3 access details don't exist in your config files, so lets get started!%n\n" );
+			echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files, so lets get started!%n\n" );
 
             // View logflume Wiki
             echo WP_CLI::colorize( "%rStep 1: %n");
@@ -77,37 +83,51 @@ class DevelopmentSyncing {
 
             return false;
 
-		}else{
-            echo WP_CLI::colorize( "%Y... Yes! config details exist! 🙂%n\n");
+		// }else{
+        //     echo WP_CLI::colorize( "%YYes! config details exist! 🙂%n\n\n");
         }
 
-        // if(! isset( $args[0] )){
-        //     return WP_CLI::error( "Please supply a bucket name 'wp logflume create-buckets <bucket-name>'" );
-		// }
+        echo WP_CLI::colorize( "%YWould you like to create the standard buckets?:%n\n");
+        echo WP_CLI::colorize( "%r".get_bloginfo('name')."-logflume%n\n");
+        echo WP_CLI::colorize( "%r".get_bloginfo('name')."-logflume-backup%n\n");
 
-        $s3 = $this->connect_to_s3();
+        WP_CLI::confirm( 'Would you like to create the standard logflume buckets?', $assoc_args = array('continue' => 'yes') );
 
-        // Create standard logflume bucket
-        try {
+        // If 'Y' create buckets
+        if( isset($assoc_args['continue']) ){
 
-            $result = $s3->createBucket([
-                'Bucket' => $args[0]."-logflume"
-            ]);
+            $s3 = $this->connect_to_s3();
 
-        } catch (Aws\S3\Exception\S3Exception $e) {
-            echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+            // Create standard logflume bucket
+            try {
+
+                $result = $s3->createBucket([
+                    'Bucket' => get_bloginfo('name')."-logflume"
+                ]);
+
+            } catch (Aws\S3\Exception\S3Exception $e) {
+                echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+            }
+
+            // Create backup bucket
+            try {
+
+                $result = $s3->createBucket([
+                    'Bucket' => get_bloginfo('name')."-logflume-backup"
+                ]);
+
+            } catch (Aws\S3\Exception\S3Exception $e) {
+                echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+            }
+
+
+        }else{
+
+            echo WP_CLI::colorize( "%r  %n\n");
+
         }
 
-        // Create backup bucket
-        try {
-
-            $result = $s3->createBucket([
-                'Bucket' => "-logflume-backup"
-            ]);
-
-        } catch (Aws\S3\Exception\S3Exception $e) {
-            echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
-        }
+        return;
 
     }
 

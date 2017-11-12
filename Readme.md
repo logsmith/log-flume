@@ -10,7 +10,15 @@ Add the Wordpress plugin to your composer file:
 composer require logsmith/log-flume
 ```
 
-Add these constants to your wp-config.php file:
+Then open a terminal and run:
+
+```
+wp logflume
+```
+
+### How logflume talks to S3
+
+The setup will ask you to add these constants to your wp-config.php file:
 
 - AWS_REGION
 - AWS_ACCESS_KEY_ID
@@ -22,9 +30,9 @@ define('AWS_ACCESS_KEY_ID','xxxxxx');
 define('AWS_SECRET_ACCESS_KEY','xxxxxx');
 ```
 
-### Don't have AWS details?
+You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
-Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
+
 
 # Feature requests
 
