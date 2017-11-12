@@ -29,8 +29,9 @@ class DevelopmentSyncing {
             if($this->check_config_details_exist() == true){
                 WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
     			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
-    			WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
+    			// WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
                 WP_CLI::add_command( 'logflume setup', array($this ,'setup') );
+                WP_CLI::add_command( 'logflume check-setup', array($this ,'check_setup') );
 
             }else{
                 WP_CLI::add_command( 'logflume', array($this ,'setup') );
@@ -131,6 +132,63 @@ class DevelopmentSyncing {
 
     }
 
+    /**
+     * Checks to see if the current S3 configs are currently working
+     * This command will only appear in config details have been set
+     * @return [type] [description]
+     */
+    function check_setup($args){
+
+
+        // $result = $client->listBuckets([/* ... */]);
+        // $promise = $client->listBucketsAsync([/* ... */]);
+
+        $s3 = $this->connect_to_s3();
+
+    	try {
+            $result = $s3->listBuckets(array());
+        }
+
+    	// catch S3 exception
+    	catch(Aws\S3\Exception\S3Exception $e) {
+    		// $connected_to_S3 = false;
+
+            // echo WP_CLI::error( "There was an error connecting to S3. Run 'wp logflume check-setup debug' to get a clearer " );
+
+
+            echo $e->getAwsErrorCode();
+
+            //InvalidAccessKeyId - wrong key id
+
+            //SignatureDoesNotMatch - wrong secret
+
+            // if( isset( $args[0] )){
+            //     echo 'Message: ' .$e->getMessage();
+            //
+            // }
+
+    		//
+    		// echo $e->getMessage();
+            // // $xml=simplexml_load_string($e->getMessage());
+            // // print_r($xml);
+            //
+            //
+            // echo "\n\n\n";
+            //
+            // echo $e->getCode();
+
+
+
+            // echo "<pre>";
+            // print_r($xml);
+            // echo "</pre>";
+
+
+
+    	};
+
+    }
+
 	function cli_log_flume_select_bucket($args){
 
 		$connected_to_S3 = true;
@@ -160,6 +218,8 @@ class DevelopmentSyncing {
 
         $s3 = $this->connect_to_s3();
 
+
+        //ASTODO this should be the built in config_check function
 		try {
 			$result = $s3->listBuckets(array());
 		}
@@ -169,7 +229,7 @@ class DevelopmentSyncing {
 			$connected_to_S3 = false;
 			// echo 'Message: ' .$e->getMessage();
 		};
-
+        //ASTODO END replace
 
 		if($connected_to_S3 == true){
 
