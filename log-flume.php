@@ -14,21 +14,16 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
+/**
+ * Implements example command.
+ */
 class DevelopmentSyncing {
 
     function __construct() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
-            if($this->check_config_details_exist() == true){
-                WP_CLI::add_command( 'logflume select-bucket', array($this ,'cli_log_flume_select_bucket') );
-    			WP_CLI::add_command( 'logflume sync-media', array($this ,'cli_log_flume_transfer') );
-    			// WP_CLI::add_command( 'logflume backup', array($this ,'backup_site') );
-                WP_CLI::add_command( 'logflume setup', array($this ,'setup') );
-                WP_CLI::add_command( 'logflume check-setup', array($this ,'check_setup') );
-            }else{
-                WP_CLI::add_command( 'logflume', array($this ,'setup') );
-            }
+            WP_CLI::add_command( 'logflume', $this );
 
         };
 
@@ -62,10 +57,6 @@ class DevelopmentSyncing {
 
 			echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
 
-            // View logflume Wiki
-            // echo WP_CLI::colorize( "%rStep 1: %n");
-            // echo WP_CLI::colorize( "%Y Visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
-
             // Add config details
             echo WP_CLI::colorize( "%YAdd these new config details to your wp-config file:%n\n");
             echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_REGION','eu-west-2'); // eu-west-2 is London%n\n");
@@ -78,11 +69,9 @@ class DevelopmentSyncing {
 
             return false;
 
-		// }else{
-        //     echo WP_CLI::colorize( "%YYes! config details exist! 🙂%n\n\n");
         }
 
-        echo WP_CLI::colorize( "%YPlease provide a bucket name (url safe). Once given '-logflume' and '-backup' will be appended.%n\n");
+        echo WP_CLI::colorize( "%YPlease provide a bucket name (url safe). Once given '.logflume' will be appended.%n\n");
         echo WP_CLI::colorize( "%YAn good name would the current sites URL: %n");
 
         $url = get_bloginfo('url');
@@ -103,45 +92,42 @@ class DevelopmentSyncing {
         // Remove new line created when pressing enter key
         $bucket_name = rtrim( $bucket_name, "\n" );
 
-        echo WP_CLI::colorize( "%YWould you like to create the standard buckets?:%n\n");
-        echo WP_CLI::colorize( "%r".$bucket_name."-logflume%n\n");
-        echo WP_CLI::colorize( "%r".$bucket_name."-backup%n\n");
+        echo WP_CLI::colorize( "%YWould you like to create the standard bucket?:%n\n");
+        echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
 
         WP_CLI::confirm( 'Would you like to create the standard logflume buckets?', $assoc_args = array('continue' => 'yes') );
 
-        $s3 = $this->connect_to_s3();
-
         // If 'Y' create logflume bucket
         if( isset($assoc_args['continue']) ){
+            $s3 = $this->connect_to_s3();
             // Create standard logflume bucket
-            $this->create_bucket( $s3, $bucket_name, '.logflume' );
+            $creation_success = $this->create_bucket( $s3, $bucket_name, '.logflume' );
         }
 
-
-        // If 'Y' create backup bucket
-        // if( isset($assoc_args['continue']) ){
-        //     // Create standard logflume bucket
-        //     $this->create_bucket( $s3, $bucket_name );
-        // }
-
-
-
-        return;
+        if( $creation_success == true ){
+            // update_option('logflume_s3_selected_bucket',$bucket_name,0);
+            echo WP_CLI::success( "Log Flume bucket created 👌");
+        }
 
     }
 
+    /**
+     * Helper function for creating buckets
+     */
     private function create_bucket( $s3 = null, $bucket_name, $bucket_ext = ""){
 
+        $success = true;
+
         try {
-
             $result = $s3->createBucket([
-                'Bucket' => $bucket_name.".logflume"
+                'Bucket' => $bucket_name . ".logflume"
             ]);
-
         } catch (Aws\S3\Exception\S3Exception $e) {
             echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+            $success = false;
         }
 
+        return $success;
 
     }
 
@@ -153,18 +139,11 @@ class DevelopmentSyncing {
      */
     function check_setup($args){
 
-
-        // $result = $client->listBuckets([/* ... */]);
-        // $promise = $client->listBucketsAsync([/* ... */]);
-
         $s3 = $this->connect_to_s3();
 
     	try {
             $result = $s3->listBuckets(array());
-        }
-
-    	// catch S3 exception
-    	catch(Aws\S3\Exception\S3Exception $e) {
+        } catch(Aws\S3\Exception\S3Exception $e) {
     		// $connected_to_S3 = false;
 
             echo WP_CLI::warning( "There was an error connecting to S3 😣 This was the error:\n" );
@@ -174,7 +153,6 @@ class DevelopmentSyncing {
     	};
 
         return WP_CLI::success( "Connection to AWS successfull 😄");
-
 
     }
 
