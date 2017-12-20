@@ -22,9 +22,7 @@ class DevelopmentSyncing {
     function __construct() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-
             WP_CLI::add_command( 'logflume', $this );
-
         };
 
     }
@@ -43,7 +41,7 @@ class DevelopmentSyncing {
         return $s3;
     }
 
-	function check_config_details_exist(){
+	private function check_config_details_exist(){
         if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
             return false;
         }else{
@@ -71,8 +69,8 @@ class DevelopmentSyncing {
 
         }
 
-        echo WP_CLI::colorize( "%YPlease provide a bucket name (url safe). Once given '.logflume' will be appended.%n\n");
-        echo WP_CLI::colorize( "%YAn good name would the current sites URL: %n");
+        echo WP_CLI::colorize( "%YPlease provide a bucket name (url safe). Once given, '.logflume' will be appended.%n\n");
+        echo WP_CLI::colorize( "%YAn example bucket name might be the current site URL: %n");
 
         $url = get_bloginfo('url');
 
@@ -84,7 +82,7 @@ class DevelopmentSyncing {
             }
         }
 
-        echo WP_CLI::colorize( "%Y'$url'\n");
+        echo WP_CLI::colorize( "%R'$url'\n");
 
         // Get bucket name
         $bucket_name = fgets( STDIN );
@@ -92,10 +90,10 @@ class DevelopmentSyncing {
         // Remove new line created when pressing enter key
         $bucket_name = rtrim( $bucket_name, "\n" );
 
-        echo WP_CLI::colorize( "%YWould you like to create the standard bucket?:%n\n");
+        echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?:%n\n");
         echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
 
-        WP_CLI::confirm( 'Would you like to create the standard logflume buckets?', $assoc_args = array('continue' => 'yes') );
+        WP_CLI::confirm( '', $assoc_args = array('continue' => 'yes') );
 
         // If 'Y' create logflume bucket
         if( isset($assoc_args['continue']) ){
@@ -105,8 +103,8 @@ class DevelopmentSyncing {
         }
 
         if( $creation_success == true ){
-            // update_option('logflume_s3_selected_bucket',$bucket_name,0);
-            echo WP_CLI::success( "Log Flume bucket created 👌");
+            update_option( 'logflume_s3_selected_bucket', $bucket_name . '.logflume', 0 );
+            echo WP_CLI::success( "Log Flume bucket created and selected 👌");
         }
 
     }
@@ -156,7 +154,7 @@ class DevelopmentSyncing {
 
     }
 
-	function cli_log_flume_select_bucket($args){
+	function select_bucket($args){
 
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
@@ -222,7 +220,7 @@ class DevelopmentSyncing {
 
 	}
 
-	function cli_log_flume_transfer() {
+	function sync() {
 
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
@@ -326,13 +324,13 @@ class DevelopmentSyncing {
 
 	}
 
-    function backup_site() {
+    // function backup_site() {
 
         // $this->backup_database();
 
-    }
+    // }
 
-	function find_files_to_sync(){
+	private function find_files_to_sync(){
 
 		// These need to be reduced
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
@@ -431,7 +429,7 @@ class DevelopmentSyncing {
 
 
 
-    function backup_database(){
+    private function backup_database(){
 
         // Check to see if the backup folder exists
         if (!file_exists("wp-content/uploads/backups/")) {
@@ -444,9 +442,7 @@ class DevelopmentSyncing {
         // Create a backup with a file name involving the datestamp
         $output = shell_exec('wp db export wp-content/uploads/backups/'. date('Y-m-d--h-i-s').'-backup.sql --allow-root');
 
-
     }
-
 
 }
 
