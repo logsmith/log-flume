@@ -438,9 +438,18 @@ class DevelopmentSyncing {
 
         };
 
+        // generate a hash based on the date and a random number
+        $hashed_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
-        $output = shell_exec('wp db export wp-content/uploads/logflume-backups/'. date('ymd-h:i:s').'-'.rand(1,9999).'-backup.sql --allow-root');
+        $output = shell_exec( 'wp db export wp-content/uploads/logflume-backups/' . $hashed_filename . ' --allow-root');
+
+
+        // Transfer the file to S3
+
+        // If successfully transfered, delete local copy
+        $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
 
     }
 
