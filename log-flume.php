@@ -51,6 +51,8 @@ class DevelopmentSyncing {
 
     function setup($args){
 
+        //ASTODO check to see if there is a bucket config already saved
+
         if( $this->check_config_details_exist() == false ){
 
 			echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
@@ -103,10 +105,52 @@ class DevelopmentSyncing {
         }
 
         if( $creation_success == true ){
+
             update_option( 'logflume_s3_selected_bucket', $bucket_name . '.logflume', 0 );
             echo WP_CLI::success( "Log Flume bucket created and selected 👌");
-        }
 
+            echo WP_CLI::colorize( "%YWill you be taking database backups for this site?%n\n");
+            WP_CLI::confirm( '', $assoc_args = array('continue' => 'yes') );
+
+            if( isset($assoc_args['continue']) ){
+
+                echo WP_CLI::colorize( "%YPlease provide the number of days to keep backups, for example '30' is a good default.%n\n");
+                echo WP_CLI::colorize( "%YProviding '0' will maintain backup forever.%n\n");
+
+                // Get number of days to keep backups
+                $backup_life = fgets( STDIN );
+
+                // Remove new line created when pressing enter key
+                $backup_life = rtrim( $backup_life, "\n" );
+
+                //ASTODO test for int
+
+                if( $backup_life != 0){
+
+                    // Setup lifecycle policy for DB backups
+                    $result = $s3->putBucketLifecycleConfiguration([
+                        'Bucket' => $bucket_name . '.logflume',
+                        'LifecycleConfiguration' => [
+                            'Rules' => [[
+                                'Expiration' => [
+                                    // 'Date' => <integer || string || DateTime>,
+                                    'Days' => $backup_life,
+                                    // 'ExpiredObjectDeleteMarker' => true || false,
+                                ],
+                                'ID' => "SQL backups",
+                                'Filter' => [
+                                    'Prefix' => 'sql-backups'
+                                ],
+                                'Status' => 'Enabled'
+                            ]]
+                        ]
+                    ]);
+                }
+
+                echo WP_CLI::success( "Setup complete ");
+
+            }
+        }
     }
 
     /**
@@ -234,7 +278,6 @@ class DevelopmentSyncing {
 		echo WP_CLI::colorize( "%YStarting to sync files%n\n");
 
 		$missing_files = $this->find_files_to_sync();
-
 
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
@@ -418,8 +461,9 @@ class DevelopmentSyncing {
 
 	}
 
-
-
+    /*
+     * Backup a website database
+     */
     function backup_database(){
 
         // Check to see if the backup folder exists
