@@ -142,13 +142,10 @@ class DevelopmentSyncing {
     	try {
             $result = $s3->listBuckets(array());
         } catch(Aws\S3\Exception\S3Exception $e) {
-    		// $connected_to_S3 = false;
-
             echo WP_CLI::warning( "There was an error connecting to S3 😣 This was the error:\n" );
-
             echo $e->getAwsErrorCode()."\n";
             return false;
-    	};
+        };
 
         return WP_CLI::success( "Connection to AWS successfull 😄");
 
@@ -158,6 +155,7 @@ class DevelopmentSyncing {
 
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
+        //ASTODO This get_option could be a helper
 		$selected = get_option('logflume_s3_selected_bucket');
 
 		if( $this->check_config_details_exist() == false ){
@@ -170,7 +168,6 @@ class DevelopmentSyncing {
 			update_option('logflume_s3_selected_bucket',$selected,0);
 			WP_CLI::success( "Selected bucket updated" );
 		}
-
 
 		// Test if bucket has not yet been selected
 		if($selected == ""){
@@ -239,7 +236,7 @@ class DevelopmentSyncing {
 		$missing_files = $this->find_files_to_sync();
 
 
-        //TODO This isn't needed!
+        //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
 			'region'      => LOG_FLUME_REGION,
@@ -259,7 +256,7 @@ class DevelopmentSyncing {
 			);
 
 
-			//TODO check count
+			//ASTODO check count
 			// Upload missing files
 			foreach($missing_files['display'] as $file){
 
@@ -338,6 +335,7 @@ class DevelopmentSyncing {
 		$ignore = array("DS_Store","htaccess");
 
 		// Instantiate an Amazon S3 client.
+        //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
 			'region'      => LOG_FLUME_REGION,
@@ -445,8 +443,23 @@ class DevelopmentSyncing {
         // guess the backup filenames and reduce the risk of being able to download backups
         $output = shell_exec( 'wp db export wp-content/uploads/logflume-backups/' . $hashed_filename . ' --allow-root');
 
+        //ASTODO check to see if backup actually worked
 
-        // Transfer the file to S3
+        $s3 = $this->connect_to_s3();
+
+        $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+
+        if( $selected_s3_bucket != "" ){
+
+            // Transfer the file to S3
+            $result = $s3->putObject(array(
+                'Bucket' => $selected_s3_bucket,
+                'Key'    => "sqls-backups/".date('d-m-Y--h:i:s').".sql",
+                'SourceFile' => "wp-content/uploads/logflume-backups/" . $hashed_filename
+            ));
+
+        }
+
 
         // If successfully transfered, delete local copy
         $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
