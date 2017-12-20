@@ -429,18 +429,18 @@ class DevelopmentSyncing {
 
 
 
-    private function backup_database(){
+    function backup_database(){
 
         // Check to see if the backup folder exists
-        if (!file_exists("wp-content/uploads/backups/")) {
-            mkdir("wp-content/uploads/backups/" ,0755);
-            echo "The directory 'wp-content/uploads/backups/' was successfully created.\n";
+        if (!file_exists("wp-content/uploads/logflume-backups/")) {
+            mkdir("wp-content/uploads/logflume-backups/" ,0755);
+            echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/logflume-backups/' was successfully created.%n\n");
+
         };
 
-        // Create a backup with a file name 'latest-backup'
-        $output = shell_exec('wp db export wp-content/uploads/backups/latest-backup.sql --allow-root');
-        // Create a backup with a file name involving the datestamp
-        $output = shell_exec('wp db export wp-content/uploads/backups/'. date('Y-m-d--h-i-s').'-backup.sql --allow-root');
+        // Create a backup with a file name involving the datestamp and a rand number to make it harder to
+        // guess the backup filenames and reduce the risk of being able to download backups
+        $output = shell_exec('wp db export wp-content/uploads/logflume-backups/'. date('ymd-h:i:s').'-'.rand(1,9999).'-backup.sql --allow-root');
 
     }
 
