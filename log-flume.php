@@ -15,7 +15,7 @@ use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
 /**
- * Implements example command.
+ * Sync media and backup websites
  */
 class DevelopmentSyncing {
 
@@ -49,10 +49,41 @@ class DevelopmentSyncing {
         }
     }
 
-    function setup($args){
+    /**
+     * Setup Log Flume bucket and create lifecycle policy.
+     *
+     * ## OPTIONS
+     *
+     * <bucket_name>
+     * : Name of bucket to create
+     *
+     * [--expiry=<number-of-days>]
+     * : Number of days to keep SQL backups. Pass '0' to keep backups forever.
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp option wordpress.dev 40
+     *     Success: This is will setup a new bucket and add a lifecycle policy of
+     *     40 days for the SQL folder.
+     */
+    function setup( $args, $assoc_args ){
 
-        //ASTODO check to see if there is a bucket config already saved
+        // Get bucket name
+        $bucket_name = $args[0];
 
+        // Get exporty time in number of days
+        if( ! isset($assoc_args['expiry']) ){
+            $backup_life = 30;
+        }else{
+            if( is_numeric($assoc_args['expiry']) ){
+                $backup_life = $assoc_args['expiry'];
+            }else{
+                echo WP_CLI::error( "Please pass a number of days as the expiry e.g. '40'." );
+            }
+        }
+
+
+        //ASTODO centralise this response
         if( $this->check_config_details_exist() == false ){
 
 			echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
@@ -71,34 +102,13 @@ class DevelopmentSyncing {
 
         }
 
-        echo WP_CLI::colorize( "%YPlease provide a bucket name (url safe). Once given, '.logflume' will be appended.%n\n");
-        echo WP_CLI::colorize( "%YAn example bucket name might be the current site URL: %n");
-
-        $url = get_bloginfo('url');
-
-        $disallowed = array('http://', 'https://');
-
-        foreach($disallowed as $d) {
-            if(strpos($url, $d) === 0) {
-                $url = str_replace($d, '', $url);
-            }
-        }
-
-        echo WP_CLI::colorize( "%R'$url'\n");
-
-        // Get bucket name
-        $bucket_name = fgets( STDIN );
-
-        // Remove new line created when pressing enter key
-        $bucket_name = rtrim( $bucket_name, "\n" );
-
-        echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?:%n\n");
+        echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?: %n");
         echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
 
-        WP_CLI::confirm( '', $assoc_args = array('continue' => 'yes') );
+        WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
         // If 'Y' create logflume bucket
-        if( isset($assoc_args['continue']) ){
+        if( isset( $assoc_args['continue'] )){
             $s3 = $this->connect_to_s3();
             // Create standard logflume bucket
             $creation_success = $this->create_bucket( $s3, $bucket_name, '.logflume' );
@@ -110,20 +120,9 @@ class DevelopmentSyncing {
             echo WP_CLI::success( "Log Flume bucket created and selected 👌");
 
             echo WP_CLI::colorize( "%YWill you be taking database backups for this site?%n\n");
-            WP_CLI::confirm( '', $assoc_args = array('continue' => 'yes') );
+            WP_CLI::confirm( 'Backup database?', $assoc_args = array('continue' => 'yes') );
 
             if( isset($assoc_args['continue']) ){
-
-                echo WP_CLI::colorize( "%YPlease provide the number of days to keep backups, for example '30' is a good default.%n\n");
-                echo WP_CLI::colorize( "%YProviding '0' will maintain backup forever.%n\n");
-
-                // Get number of days to keep backups
-                $backup_life = fgets( STDIN );
-
-                // Remove new line created when pressing enter key
-                $backup_life = rtrim( $backup_life, "\n" );
-
-                //ASTODO test for int
 
                 if( $backup_life != 0){
 
@@ -179,7 +178,7 @@ class DevelopmentSyncing {
      * This command will only appear in config details have been set
      * @return [type] [description]
      */
-    function check_setup($args){
+    function check_setup(){
 
         $s3 = $this->connect_to_s3();
 
