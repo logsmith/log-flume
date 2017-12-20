@@ -321,12 +321,6 @@ class DevelopmentSyncing {
 
 	}
 
-    // function backup_site() {
-
-        // $this->backup_database();
-
-    // }
-
 	private function find_files_to_sync(){
 
 		// These need to be reduced
@@ -415,7 +409,6 @@ class DevelopmentSyncing {
 		$missing_locally = array_values($missing_locally);
 		$missing_remotely = array_values($missing_remotely);
 
-
 		$missing_files = array();
 		$missing_files['missing_locally'] = $missing_locally;
 		$missing_files['missing_remotely'] = $missing_remotely;
@@ -433,7 +426,6 @@ class DevelopmentSyncing {
         if (!file_exists("wp-content/uploads/logflume-backups/")) {
             mkdir("wp-content/uploads/logflume-backups/" ,0755);
             echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/logflume-backups/' was successfully created.%n\n");
-
         };
 
         // generate a hash based on the date and a random number
@@ -443,29 +435,38 @@ class DevelopmentSyncing {
         // guess the backup filenames and reduce the risk of being able to download backups
         $output = shell_exec( 'wp db export wp-content/uploads/logflume-backups/' . $hashed_filename . ' --allow-root');
 
-        //ASTODO check to see if backup actually worked
-
         $s3 = $this->connect_to_s3();
 
+        //ASTODO centralise this get option, once it's centalised there will be a way of overriding it via config
         $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 
+        //ASTODO check to see if backup actually worked
         if( $selected_s3_bucket != "" ){
 
             // Transfer the file to S3
-            $result = $s3->putObject(array(
-                'Bucket' => $selected_s3_bucket,
-                'Key'    => "sqls-backups/".date('d-m-Y--h:i:s').".sql",
-                'SourceFile' => "wp-content/uploads/logflume-backups/" . $hashed_filename
-            ));
+            $success = false;
+
+            try {
+
+                $result = $s3->putObject(array(
+                    'Bucket' => $selected_s3_bucket,
+                    'Key'    => "sql-backups/".date('d-m-Y--h:i:s').".sql",
+                    'SourceFile' => "wp-content/uploads/logflume-backups/" . $hashed_filename
+                ));
+
+                $success = true;
+
+            } catch (Aws\S3\Exception\S3Exception $e) {
+    			echo "There was an error uploading the backup database 😕";
+    		}
+
+            // If successfully transfered, delete local copy
+            if( $success == true ){
+                $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
+            }
 
         }
-
-
-        // If successfully transfered, delete local copy
-        $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
-
     }
-
 }
 
 $log_flume = new DevelopmentSyncing;
