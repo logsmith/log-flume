@@ -1,39 +1,50 @@
 ![log-flume-logo](https://cloud.githubusercontent.com/assets/1636310/24171665/407f51a2-0e7d-11e7-974f-f80e0c45e1ed.jpg)
 
-This allows developers to sync WordPress media libraries between machines over Amazon S3. Currently the focus is on local setups and is not intended to be used for transferring media between live and development environments.
+This allows developers to sync WordPress media libraries between machines over Amazon S3.
+
+It can also be used for backing up websites or even moving websites between servers
+
+### How Log Flume talks to S3
+
+The setup will ask you to add these constants to your wp-config.php file:
+
+- LOG_FLUME_REGION
+- LOG_FLUME_ACCESS_KEY_ID
+- LOG_FLUME_SECRET_ACCESS_KEY
+
+```
+define('LOG_FLUME_REGION','eu-west-2');
+define('LOG_FLUME_ACCESS_KEY_ID','');
+define('LOG_FLUME_SECRET_ACCESS_KEY','');
+```
+
+You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
 # Installation
 
-Add the Wordpress plugin to your composer file:
+Add the Wordpress plugin to your composer file by running:
 
 ```
 composer require logsmith/log-flume
 ```
 
-Then open a terminal and run:
+Then open a terminal and run (will will need the constants above):
 
 ```
-wp logflume
+wp logflume setup
 ```
 
-### How logflume talks to S3
+# Setting up cronjob
 
-The setup will ask you to add these constants to your wp-config.php file:
-
-- AWS_REGION
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_ACCESS_KEY
-
-```
-define('AWS_REGION','xxxxxx');
-define('AWS_ACCESS_KEY_ID','xxxxxx');
-define('AWS_SECRET_ACCESS_KEY','xxxxxx');
-```
-
-You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
+/usr/local/bin/wp logflume backup --path=/path/to/www.website.co.uk
 
 
+# Features
 
-# Feature requests
-
-Got a feature request? Add an issue! Simple....
+- Sync with S3
+    - Put files up to S3
+    - Get fiels from S3
+    - Sync both ways
+- Backup
+    - Sync files up to S3
+    - Export DB and move to S3

@@ -1,5 +1,11 @@
 # Changelog
 
+= 0.2.0 =
+* Moved every to the CLI, this is now completely a WP-CLI tool.
+* Created a setup function.
+* Started adding doc blocks for exposed commmands.
+* Added direction support to syncing
+
 = 0.1.0 =
 * Removed of admin pages and switched to syncing over the CLI
 * Deleted all JS and CSS

@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.1.0
+Version: 0.2.0
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -341,6 +341,7 @@ class DevelopmentSyncing {
 			);
 
 			//ASTODO check count
+			//ASTODO Don't sync sql-backup folder
 			// Upload missing files
 			foreach($missing_files['display'] as $file){
 
@@ -534,6 +535,7 @@ class DevelopmentSyncing {
             // If successfully transfered, delete local copy
             if( $success == true ){
                 $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
+                return WP_CLI::success( "DB backup complete! 🎉" );
             }
 
         }
