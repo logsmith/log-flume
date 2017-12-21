@@ -72,7 +72,7 @@ class DevelopmentSyncing {
         $bucket_name = $args[0];
 
         // Get exporty time in number of days
-        if( ! isset($assoc_args['expiry']) ){
+        if( ! isset( $assoc_args['expiry'] ) ){
             $backup_life = 30;
         }else{
             if( is_numeric($assoc_args['expiry']) ){
@@ -193,7 +193,7 @@ class DevelopmentSyncing {
 
     }
 
-	function select_bucket($args){
+	function select_bucket( $args ){
 
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
@@ -259,11 +259,55 @@ class DevelopmentSyncing {
 
 	}
 
-	function sync() {
+    /**
+     * Sync files to S3. Then export the db and upload
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp backup
+     *     Success: Sync the media and upload the db
+     *
+     */
+    function backup( $args, $assoc_args ) {
+
+        // Sync media up to S3
+        $this->sync([], ['direction' => 'up'] );
+        // Backup DB
+        $this->backup_database();
+
+    }
+
+    /**
+     * Sync files to S3. You can also just sync in one direction, this is good for backups
+     *
+     * ## OPTIONS
+     *
+     * [--direction=<up-or-down>]
+     * : Sync up to S3, or pull down from S3
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp sync
+     *     Success: Will sync all uploads to S3
+     *
+     */
+	function sync( $args, $assoc_args ) {
+
+        // Check to make sure direction is set and is valid
+        if( ! isset( $assoc_args['direction'] ) ){
+            $direction = 'both';
+        }else{
+            if( $assoc_args['direction'] == 'up' ){
+                $direction = 'up';
+            }else if( $assoc_args['direction'] == 'down' ){
+                $direction = 'down';
+            }else{
+                WP_CLI::error( "Please only provide 'up' or 'down' as a direction" );
+            }
+        }
 
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
-
 
 		if( $this->check_config_details_exist() == false ){
 			return WP_CLI::error( "Config details missing" );
@@ -296,58 +340,46 @@ class DevelopmentSyncing {
 				'debug'       => true
 			);
 
-
 			//ASTODO check count
 			// Upload missing files
 			foreach($missing_files['display'] as $file){
 
-				// $results['files'] = $_REQUEST['files'];
+                if( $direction == 'both' || $direction == 'down' ){
+    				if( $file['location'] == 'remote'){
 
-				if( $file['location'] == 'remote'){
+    					//Check to see if the missing $file is actually a folder
+    					$ext = pathinfo($file['file'], PATHINFO_EXTENSION);
 
-					// foreach($missing_files['missing_locally'] as $file){
+    					//Check to see if the directory exists
+    					if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file['file']))) {
+    						mkdir(dirname($wp_upload_dir['basedir']."/".$file['file']),0755, true);
+    					};
 
-					//Check to see if the missing $file is actually a folder
-					$ext = pathinfo($file['file'], PATHINFO_EXTENSION);
+    					if($ext != ""){
+    						$result = $s3->getObject([
+    						   'Bucket' => $selected_s3_bucket,
+    						   'Key'    => $file['file'],
+    						   'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
+    						]);
+    					}
+    					$results['files'][] = $file['file'];
 
-					//Check to see if the directory exists
-					if (!file_exists(dirname($wp_upload_dir['basedir']."/".$file['file']))) {
-						mkdir(dirname($wp_upload_dir['basedir']."/".$file['file']),0755, true);
-					};
+                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬇ downloaded from S3%n" ));
+    				}
+                }
 
-					//If the $file isn't a folder download it
-					if($ext != ""){
-						$result = $s3->getObject([
-						   'Bucket' => $selected_s3_bucket,
-						   'Key'    => $file['file'],
-						   'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
-						]);
-					}
-					$results['files'][] = $file['file'];
+                if( $direction == 'both' || $direction == 'up' ){
+    				if( $file['location'] == 'local'){
+    					$result = $s3->putObject(array(
+    						'Bucket' => $selected_s3_bucket,
+    						'Key'    => $file['file'],
+    						'SourceFile' => $wp_upload_dir['basedir']."/".$file['file']
+    					));
+    					$results['files'][] = $file['file'];
 
-					// }
-
-				}
-
-				if( $file['location'] == 'local'){
-
-					$result = $s3->putObject(array(
-						'Bucket' => $selected_s3_bucket,
-						'Key'    => $file['file'],
-						'SourceFile' => $wp_upload_dir['basedir']."/".$file['file']
-					));
-
-					$results['files'][] = $file['file'];
-
-				}
-
-
-				if( $file['location'] == 'local' ){
-					WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
-				}else{
-					WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬇ downloaded from S3%n" ));
-				}
-
+                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
+    				}
+                }
 
 			}
 
@@ -459,7 +491,7 @@ class DevelopmentSyncing {
     /*
      * Backup a website database
      */
-    function backup_database(){
+    private function backup_database(){
 
         // Check to see if the backup folder exists
         if (!file_exists("wp-content/uploads/logflume-backups/")) {
