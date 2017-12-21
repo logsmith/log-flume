@@ -102,8 +102,8 @@ class DevelopmentSyncing {
 
         }
 
-        echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?: %n");
-        echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
+        // echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?: %n");
+        // echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
@@ -119,7 +119,6 @@ class DevelopmentSyncing {
             update_option( 'logflume_s3_selected_bucket', $bucket_name . '.logflume', 0 );
             echo WP_CLI::success( "Log Flume bucket created and selected 👌");
 
-            echo WP_CLI::colorize( "%YWill you be taking database backups for this site?%n\n");
             WP_CLI::confirm( 'Backup database?', $assoc_args = array('continue' => 'yes') );
 
             if( isset($assoc_args['continue']) ){
@@ -274,7 +273,7 @@ class DevelopmentSyncing {
 			return WP_CLI::error( "There is currently no S3 bucket selected, please run `wp logflume select-bucket`" );
 		}
 
-		echo WP_CLI::colorize( "%YStarting to sync files%n\n");
+		WP_CLI::log( WP_CLI::colorize( "%YStarting to sync files%n" ));
 
 		$missing_files = $this->find_files_to_sync();
 
@@ -343,13 +342,10 @@ class DevelopmentSyncing {
 				}
 
 
-
-				echo WP_CLI::colorize( "%gSynced: ".$file['file']."%n");
-
 				if( $file['location'] == 'local' ){
-					echo WP_CLI::colorize( "%y - ⬆ uploaded to S3%n\n");
+					WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
 				}else{
-					echo WP_CLI::colorize( "%y - ⬇ downloaded from S3%n\n");
+					WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬇ downloaded from S3%n" ));
 				}
 
 
