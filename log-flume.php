@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 0.2.0
+Version: 1.0.0
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -43,6 +43,19 @@ class DevelopmentSyncing {
 
 	private function check_config_details_exist(){
         if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
+
+            echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
+
+            // Add config details
+            echo WP_CLI::colorize( "%YAdd these new config details to your wp-config file:%n\n");
+            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_REGION','eu-west-2'); // eu-west-2 is London%n\n");
+            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
+            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
+            echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
+            echo WP_CLI::colorize( "%r'wp logflume setup'%n\n\n");
+
+            echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
+
             return false;
         }else{
             return true;
@@ -82,28 +95,9 @@ class DevelopmentSyncing {
             }
         }
 
-
-        //ASTODO centralise this response
         if( $this->check_config_details_exist() == false ){
-
-			echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
-
-            // Add config details
-            echo WP_CLI::colorize( "%YAdd these new config details to your wp-config file:%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_REGION','eu-west-2'); // eu-west-2 is London%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
-            echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
-            echo WP_CLI::colorize( "%r'wp logflume setup'%n\n\n");
-
-            echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
-
             return false;
-
         }
-
-        // echo WP_CLI::colorize( "%YWould you like to create the standard logflume bucket?: %n");
-        // echo WP_CLI::colorize( "%r".$bucket_name.".logflume%n\n");
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
@@ -177,19 +171,19 @@ class DevelopmentSyncing {
      * This command will only appear in config details have been set
      * @return [type] [description]
      */
-    function check_setup(){
+    function check_credentials(){
 
         $s3 = $this->connect_to_s3();
 
     	try {
             $result = $s3->listBuckets(array());
         } catch(Aws\S3\Exception\S3Exception $e) {
-            echo WP_CLI::warning( "There was an error connecting to S3 😣 This was the error:\n" );
+            echo WP_CLI::warning( "There was an error connecting to S3 😣\n\nThis was the error:\n" );
             echo $e->getAwsErrorCode()."\n";
             return false;
         };
 
-        return WP_CLI::success( "Connection to AWS successfull 😄");
+        return WP_CLI::success( "Connection to S3 was successfull 😄");
 
     }
 

@@ -13,7 +13,7 @@ The setup will ask you to add these constants to your wp-config.php file:
 - LOG_FLUME_SECRET_ACCESS_KEY
 
 ```
-define('LOG_FLUME_REGION','eu-west-2');
+define('LOG_FLUME_REGION','eu-west-2'); //London
 define('LOG_FLUME_ACCESS_KEY_ID','');
 define('LOG_FLUME_SECRET_ACCESS_KEY','');
 ```
@@ -34,17 +34,22 @@ Then open a terminal and run (will will need the constants above):
 wp logflume setup
 ```
 
-# Setting up cronjob
+# Setting up a cronjob
 
+
+
+```
 /usr/local/bin/wp logflume backup --path=/path/to/www.website.co.uk
+```
 
+# Functions
 
-# Features
+**logflume backup**
+> This function runs `sync` and a DB backup. 
 
-- Sync with S3
-    - Put files up to S3
-    - Get fiels from S3
-    - Sync both ways
-- Backup
-    - Sync files up to S3
-    - Export DB and move to S3
+**logflume check_credentials**
+> Sees if the saved credentials can give access to 
+logflume select_bucket
+logflume setup <bucket_name> [--expiry=<number-of-days>]
+logflume sync [--direction=<up-or-down>]
+

@@ -1,10 +1,14 @@
 # Changelog
 
+= 1.0.0 =
+* Released Log Flume 🎉
+
 = 0.2.0 =
 * Moved every to the CLI, this is now completely a WP-CLI tool.
 * Created a setup function.
-* Started adding doc blocks for exposed commmands.
+* Started adding doc blocks for exposed commands.
 * Added direction support to syncing
+* Added catch all backup function
 
 = 0.1.0 =
 * Removed of admin pages and switched to syncing over the CLI
