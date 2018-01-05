@@ -96,8 +96,8 @@ class DevelopmentSyncing {
         }
 
         if( $this->check_config_details_exist() == false ){
-            return false;
-        }
+			return WP_CLI::error( "Config details missing" );
+		}
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
@@ -172,6 +172,10 @@ class DevelopmentSyncing {
      * @return [type] [description]
      */
     function check_credentials(){
+
+        if( $this->check_config_details_exist() == false ){
+			return WP_CLI::error( "Config details missing" );
+		}
 
         $s3 = $this->connect_to_s3();
 
