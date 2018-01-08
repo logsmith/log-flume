@@ -1,5 +1,8 @@
 # Changelog
 
+= 1.0.2 =
+* Sorted wp installation path issue and running db export
+
 = 1.0.1 =
 * Sorted upload directory lookup issue
 
