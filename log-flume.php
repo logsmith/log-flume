@@ -492,9 +492,11 @@ class DevelopmentSyncing {
      */
     private function backup_database(){
 
+        $wp_upload_dir = wp_upload_dir();
+
         // Check to see if the backup folder exists
-        if (!file_exists("wp-content/uploads/logflume-backups/")) {
-            mkdir("wp-content/uploads/logflume-backups/" ,0755);
+        if (!file_exists( $wp_upload_dir['basedir'] . "/logflume-backups/" )) {
+            mkdir( $wp_upload_dir['basedir'] . "/logflume-backups/" ,0755 );
             echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/logflume-backups/' was successfully created.%n\n");
         };
 
@@ -521,7 +523,7 @@ class DevelopmentSyncing {
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
                     'Key'    => "sql-backups/".date('d-m-Y--h:i:s').".sql",
-                    'SourceFile' => "wp-content/uploads/logflume-backups/" . $hashed_filename
+                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename
                 ));
 
                 $success = true;
@@ -532,7 +534,7 @@ class DevelopmentSyncing {
 
             // If successfully transfered, delete local copy
             if( $success == true ){
-                $output = shell_exec( 'rm -rf wp-content/uploads/logflume-backups/' . $hashed_filename );
+                $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename );
                 return WP_CLI::success( "DB backup complete! 🎉" );
             }
 

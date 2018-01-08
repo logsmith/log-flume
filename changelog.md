@@ -1,7 +1,7 @@
 # Changelog
 
 = 1.0.1 =
-*
+* Sorted upload directory lookup issue
 
 = 1.0.0 =
 * Released Log Flume 🎉
