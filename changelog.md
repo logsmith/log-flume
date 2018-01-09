@@ -1,5 +1,8 @@
 # Changelog
 
+= 1.0.3 =
+* Added directory definition for the DB export
+
 = 1.0.2 =
 * Sorted wp installation path issue and running db export
 
