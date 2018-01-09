@@ -505,7 +505,7 @@ class DevelopmentSyncing {
 
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
-        $output = shell_exec( 'wp db export wp-content/uploads/logflume-backups/' . $hashed_filename . ' --allow-root --path='.ABSPATH);
+        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
 
         $s3 = $this->connect_to_s3();
 
