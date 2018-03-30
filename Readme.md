@@ -16,7 +16,7 @@ You can obtain these details by creating an IAM user. Here is [our guide](https:
 
 # Installation
 
-#### 1. Add the Wordpress plugin to your composer file by navigting to your project and running inside a terminal:
+#### 1. Add the Wordpress plugin to your composer file by navigating to your project and running this inside a terminal:
 
 ```
 composer require logsmith/log-flume
@@ -47,14 +47,12 @@ wp logflume check_credentials
 #### 5. If the check is successfull, you can start the log flume setup:
 
 ```
-wp logflume setup <bucket_name>
+wp logflume setup_bucket <bucket_name>
 ```
 
-`bucket_name` is usually the address of the site you are currently working on ('website.dev')
+`bucket_name` is usually the address of the site you are currently working on ('website.local')
 
-You will also be asked `Create bucket? [y/n]` - supply 'y' if this is a fresh setup
-
-You will also be asked `Backup database? [y/n]` - in general, this is only needed for live websites and not development version.
+You will also be asked `Create bucket? [y/n]` - supply 'y' if this is a fresh setup. Select N
 
 #### 6. Time to sync!
 

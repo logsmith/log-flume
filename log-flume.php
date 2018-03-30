@@ -15,14 +15,24 @@ use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
 /**
- * Sync media and backup websites
+ * Sync media across development machines and backup websites
  */
 class DevelopmentSyncing {
 
     function __construct() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-            WP_CLI::add_command( 'logflume', $this );
+
+            if( $this->check_config_details_exist() == true ){
+
+                WP_CLI::add_command( 'logflume check_credentials', array( $this, 'check_credentials' ) );
+                WP_CLI::add_command( 'logflume select_bucket', array( $this, 'select_bucket' ) );
+                WP_CLI::add_command( 'logflume sync', array( $this, 'sync' ) );
+                WP_CLI::add_command( 'logflume backup_website', array( $this, 'backup_website' ) );
+                WP_CLI::add_command( 'logflume setup_bucket', array( $this, 'setup_bucket' ) );
+
+            }
+
         };
 
     }
@@ -52,7 +62,7 @@ class DevelopmentSyncing {
             echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
             echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
             echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
-            echo WP_CLI::colorize( "%r'wp logflume setup'%n\n\n");
+            echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n\n\n");
 
             echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
 
@@ -79,12 +89,12 @@ class DevelopmentSyncing {
      *     Success: This is will setup a new bucket and add a lifecycle policy of
      *     40 days for the SQL folder.
      */
-    function setup( $args, $assoc_args ){
+    function setup_bucket( $args, $assoc_args ){
 
         // Get bucket name
         $bucket_name = $args[0];
 
-        // Get exporty time in number of days
+        // Get expirty time in number of days
         if( ! isset( $assoc_args['expiry'] ) ){
             $backup_life = 30;
         }else{
@@ -94,10 +104,6 @@ class DevelopmentSyncing {
                 echo WP_CLI::error( "Please pass a number of days as the expiry e.g. '40'." );
             }
         }
-
-        if( $this->check_config_details_exist() == false ){
-			return WP_CLI::error( "Config details missing" );
-		}
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
@@ -196,7 +202,8 @@ class DevelopmentSyncing {
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
         //ASTODO This get_option could be a helper
-		$selected = get_option('logflume_s3_selected_bucket');
+		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+
 
 		if( $this->check_config_details_exist() == false ){
 			return WP_CLI::error( "Config details missing" );
@@ -204,16 +211,17 @@ class DevelopmentSyncing {
 
 		// Check to see if there user is trying to set a specific bucket
 		if( isset( $args[0] )){
-			$selected = $args[0];
-			update_option('logflume_s3_selected_bucket',$selected,0);
+			$selected_s3_bucket = $args[0];
+			update_option( 'logflume_s3_selected_bucket', $selected_s3_bucket, 0 );
 			WP_CLI::success( "Selected bucket updated" );
 		}
 
 		// Test if bucket has not yet been selected
-		if($selected == ""){
-			echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-			echo WP_CLI::colorize( "%r'wp logflume select-bucket <bucket-name>'%n");
-			echo WP_CLI::colorize( "%Y to select a bucket%n\n");
+		if( $selected_s3_bucket == "" ){
+			echo WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
+			// echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n");
+			// echo WP_CLI::colorize( "%Y%n\n");
+            // return false;
 		}
 
 		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
@@ -223,23 +231,23 @@ class DevelopmentSyncing {
 
         //ASTODO this should be the built in config_check function
 		try {
-			$result = $s3->listBuckets(array());
+			$result = $s3->listBuckets( array() );
 		}
 
 		//catch S3 exception
-		catch(Aws\S3\Exception\S3Exception $e) {
+		catch( Aws\S3\Exception\S3Exception $e ) {
 			$connected_to_S3 = false;
 			// echo 'Message: ' .$e->getMessage();
 		};
         //ASTODO END replace
 
-		if($connected_to_S3 == true){
+		if( $connected_to_S3 == true ){
 
 			foreach ($result['Buckets'] as $bucket) {
 
 				echo $bucket['Name'];
 
-				if($bucket['Name'] == $selected){
+				if( $bucket['Name'] == $selected_s3_bucket ){
 					$selected_bucket_check = 1;
 					echo WP_CLI::colorize( "%r - currently selected%n");
 				};
@@ -251,8 +259,8 @@ class DevelopmentSyncing {
 			return WP_CLI::error( "Error connecting to Amazon S3, please check your credentials." );
 		}
 
-		if($selected_bucket_check == 0 && $selected != ""){
-			return WP_CLI::error( "There is a selected bucket (".$selected."), but it doesn't seem to exits on S3?" );
+		if( $selected_bucket_check == 0 && $selected_s3_bucket != "" ){
+			return WP_CLI::error( "There is a selected bucket (". $selected_s3_bucket ."), but it doesn't seem to exits on S3?" );
 		}
 
 	}
@@ -266,7 +274,7 @@ class DevelopmentSyncing {
      *     Success: Sync the media and upload the db
      *
      */
-    function backup( $args, $assoc_args ) {
+    function backup_website( $args, $assoc_args ) {
 
         // Sync media up to S3
         $this->sync([], ['direction' => 'up'] );
@@ -307,13 +315,16 @@ class DevelopmentSyncing {
 		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
 
-		if( $this->check_config_details_exist() == false ){
-			return WP_CLI::error( "Config details missing" );
-		}
+		// if( $this->check_config_details_exist() == false ){
+		// 	return WP_CLI::error( "Config details missing" );
+		// }
 
-		if($selected_s3_bucket == ""){
-			return WP_CLI::error( "There is currently no S3 bucket selected, please run `wp logflume select-bucket`" );
-		}
+        if( $selected_s3_bucket == "" ){
+            echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
+            echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n");
+            echo WP_CLI::colorize( "%Y%n\n");
+            return false;
+        }
 
 		WP_CLI::log( WP_CLI::colorize( "%YStarting to sync files%n" ));
 

@@ -1,5 +1,9 @@
 # Changelog
 
+= 1.0.4 =
+* Simplified installation steps
+* Made command only available is config is present
+
 = 1.0.3 =
 * Added directory definition for the DB export
 
