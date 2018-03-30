@@ -28,8 +28,9 @@ class DevelopmentSyncing {
                 WP_CLI::add_command( 'logflume check_credentials', array( $this, 'check_credentials' ) );
                 WP_CLI::add_command( 'logflume select_bucket', array( $this, 'select_bucket' ) );
                 WP_CLI::add_command( 'logflume sync', array( $this, 'sync' ) );
-                WP_CLI::add_command( 'logflume backup_website', array( $this, 'backup_website' ) );
-                WP_CLI::add_command( 'logflume setup_bucket', array( $this, 'setup_bucket' ) );
+                WP_CLI::add_command( 'logflume backup_wordpress', array( $this, 'backup_wordpress' ) );
+                WP_CLI::add_command( 'logflume create_bucket', array( $this, 'create_bucket' ) );
+                WP_CLI::add_command( 'logflume add_lifecycle', array( $this, 'add_lifecycle' ) );
 
             }
 
@@ -62,7 +63,7 @@ class DevelopmentSyncing {
             echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
             echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
             echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
-            echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n\n\n");
+            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n\n\n");
 
             echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
 
@@ -80,30 +81,16 @@ class DevelopmentSyncing {
      * <bucket_name>
      * : Name of bucket to create
      *
-     * [--expiry=<number-of-days>]
-     * : Number of days to keep SQL backups. Pass '0' to keep backups forever.
-     *
      * ## EXAMPLES
      *
      *     $ wp option wordpress.dev 40
      *     Success: This is will setup a new bucket and add a lifecycle policy of
      *     40 days for the SQL folder.
      */
-    function setup_bucket( $args, $assoc_args ){
+    function create_bucket( $args, $assoc_args ){
 
         // Get bucket name
         $bucket_name = $args[0];
-
-        // Get expirty time in number of days
-        if( ! isset( $assoc_args['expiry'] ) ){
-            $backup_life = 30;
-        }else{
-            if( is_numeric($assoc_args['expiry']) ){
-                $backup_life = $assoc_args['expiry'];
-            }else{
-                echo WP_CLI::error( "Please pass a number of days as the expiry e.g. '40'." );
-            }
-        }
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
@@ -111,7 +98,19 @@ class DevelopmentSyncing {
         if( isset( $assoc_args['continue'] )){
             $s3 = $this->connect_to_s3();
             // Create standard logflume bucket
-            $creation_success = $this->create_bucket( $s3, $bucket_name, '.logflume' );
+            // $creation_success = $this->create_s3_bucket( $s3, $bucket_name, '.logflume' );
+
+            $creation_success = true;
+
+            try {
+                $result = $s3->createBucket([
+                    'Bucket' => $bucket_name . ".logflume"
+                ]);
+            } catch (Aws\S3\Exception\S3Exception $e) {
+                echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+                $creation_success = false;
+            }
+
         }
 
         if( $creation_success == true ){
@@ -119,56 +118,7 @@ class DevelopmentSyncing {
             update_option( 'logflume_s3_selected_bucket', $bucket_name . '.logflume', 0 );
             echo WP_CLI::success( "Log Flume bucket created and selected 👌");
 
-            WP_CLI::confirm( 'Backup database?', $assoc_args = array('continue' => 'yes') );
-
-            if( isset($assoc_args['continue']) ){
-
-                if( $backup_life != 0){
-
-                    // Setup lifecycle policy for DB backups
-                    $result = $s3->putBucketLifecycleConfiguration([
-                        'Bucket' => $bucket_name . '.logflume',
-                        'LifecycleConfiguration' => [
-                            'Rules' => [[
-                                'Expiration' => [
-                                    // 'Date' => <integer || string || DateTime>,
-                                    'Days' => $backup_life,
-                                    // 'ExpiredObjectDeleteMarker' => true || false,
-                                ],
-                                'ID' => "SQL backups",
-                                'Filter' => [
-                                    'Prefix' => 'sql-backups'
-                                ],
-                                'Status' => 'Enabled'
-                            ]]
-                        ]
-                    ]);
-                }
-
-                echo WP_CLI::success( "Setup complete ");
-
-            }
         }
-    }
-
-    /**
-     * Helper function for creating buckets
-     */
-    private function create_bucket( $s3 = null, $bucket_name, $bucket_ext = ""){
-
-        $success = true;
-
-        try {
-            $result = $s3->createBucket([
-                'Bucket' => $bucket_name . ".logflume"
-            ]);
-        } catch (Aws\S3\Exception\S3Exception $e) {
-            echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
-            $success = false;
-        }
-
-        return $success;
-
     }
 
 
@@ -219,7 +169,7 @@ class DevelopmentSyncing {
 		// Test if bucket has not yet been selected
 		if( $selected_s3_bucket == "" ){
 			echo WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
-			// echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n");
+			// echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
 			// echo WP_CLI::colorize( "%Y%n\n");
             // return false;
 		}
@@ -274,10 +224,11 @@ class DevelopmentSyncing {
      *     Success: Sync the media and upload the db
      *
      */
-    function backup_website( $args, $assoc_args ) {
+    function backup_wordpress( $args, $assoc_args ) {
 
         // Sync media up to S3
         $this->sync([], ['direction' => 'up'] );
+
         // Backup DB
         $this->backup_database();
 
@@ -321,7 +272,7 @@ class DevelopmentSyncing {
 
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-            echo WP_CLI::colorize( "%r'wp logflume setup_bucket'%n");
+            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
             echo WP_CLI::colorize( "%Y%n\n");
             return false;
         }
@@ -374,7 +325,7 @@ class DevelopmentSyncing {
     					}
     					$results['files'][] = $file['file'];
 
-                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬇ downloaded from S3%n" ));
+                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file'] . "%n%y - ⬇ downloaded from S3%n" ));
     				}
                 }
 
@@ -551,6 +502,60 @@ class DevelopmentSyncing {
 
         }
     }
+
+    /**
+     * Add life cycle policy to the SQL folder. This will help reduce file build up
+     *
+     * ## OPTIONS
+     *
+     * <number_of_days>
+     * : Name of bucket to create
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp add_lifecycle
+     *     Success: Will sync all uploads to S3
+     *
+     */
+    function add_lifecycle( $args, $assoc_args ){
+
+        $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+
+        if( $selected_s3_bucket == "" ){
+            echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
+            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
+            echo WP_CLI::colorize( "%Y%n\n");
+            return false;
+        }
+
+        // Get expirty time in number of days
+        $backup_life = $args[0];
+
+        $s3 = $this->connect_to_s3();
+
+        // Setup lifecycle policy for DB backups
+        $result = $s3->putBucketLifecycleConfiguration([
+            'Bucket' => $selected_s3_bucket,
+            'LifecycleConfiguration' => [
+                'Rules' => [[
+                    'Expiration' => [
+                        // 'Date' => <integer || string || DateTime>,
+                        'Days' => $backup_life,
+                        // 'ExpiredObjectDeleteMarker' => true || false,
+                    ],
+                    'ID' => "SQL backups",
+                    'Filter' => [
+                        'Prefix' => 'sql-backups'
+                    ],
+                    'Status' => 'Enabled'
+                ]]
+            ]
+        ]);
+
+        echo WP_CLI::success( "Lifecycle added");
+
+    }
+
 }
 
 $log_flume = new DevelopmentSyncing;

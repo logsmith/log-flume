@@ -1,8 +1,10 @@
 # Changelog
 
-= 1.0.4 =
+= 1.1.0 =
 * Simplified installation steps
-* Made command only available is config is present
+* Made command only available if LOGFLUME config is present
+* Added a lifecycle addition function
+* Updated a lot of function names
 
 = 1.0.3 =
 * Added directory definition for the DB export
