@@ -47,7 +47,7 @@ wp logflume check_credentials
 #### 5. If the check is successfull, you can start the log flume setup:
 
 ```
-wp logflume setup_bucket <bucket_name>
+wp logflume setup <bucket_name>
 ```
 
 `bucket_name` is usually the address of the site you are currently working on ('website.local')
