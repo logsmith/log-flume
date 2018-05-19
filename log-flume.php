@@ -30,7 +30,7 @@ class DevelopmentSyncing {
                 WP_CLI::add_command( 'logflume sync', array( $this, 'sync' ) );
                 WP_CLI::add_command( 'logflume backup_wordpress', array( $this, 'backup_wordpress' ) );
                 WP_CLI::add_command( 'logflume create_bucket', array( $this, 'create_bucket' ) );
-                WP_CLI::add_command( 'logflume add_lifecycle', array( $this, 'add_lifecycle' ) );
+                WP_CLI::add_command( 'logflume autodelete_sql', array( $this, 'add_lifecycle' ) );
 
             }
 
@@ -273,6 +273,8 @@ class DevelopmentSyncing {
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
             echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
+            echo WP_CLI::colorize( "%Y%n or ");
+            echo WP_CLI::colorize( "%r'wp logflume select_bucket'%n");
             echo WP_CLI::colorize( "%Y%n\n");
             return false;
         }
@@ -552,7 +554,7 @@ class DevelopmentSyncing {
             ]
         ]);
 
-        echo WP_CLI::success( "Lifecycle added");
+        echo WP_CLI::success( "Autodelete lifecycle added");
 
     }
 
