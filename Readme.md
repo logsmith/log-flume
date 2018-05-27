@@ -84,7 +84,7 @@ Run to find any issues.
 
 #### 4. Setup a bucket for the live env
 
-It's always good to separate the dev and live environments. 
+It's always good to separate the dev and live environments.
 
 ```
 wp logflume create_bucket <bucket_name>
@@ -110,15 +110,24 @@ We usually usually retain backups for 30 days:
 wp logflume autodelete_sql 30
 ```
 
-#### 6. Setup a cron job
+#### 6. Setting up auto-backup (cron job)
 
-To get the backup command to run on a regular basis, you need to setup a cron-job. Use something like this:
+To get the backup command to run on a regular basis, you need to setup a cron job. Use something similar to this:
 
 ```
-/usr/local/bin/wp logflume backup_wordpress --path=/path/to/www.website.co.uk
+/usr/local/bin/wp logflume backup_wordpress --path=/path/to/www.website.co.uk/
 ```
 
-If you are using a system to [Forge](https://forge.laravel.com), then you will be in add this in the Scheduler panel. SErvver
+If you are using composer in your project then your WordPress core files might be inside a subfolder, please modify the path to reflect this. If WordPress lives inside "/wp/" then the cron job would look like this:
+
+```
+/usr/local/bin/wp logflume backup_wordpress --path=/path/to/www.website.co.uk/wp
+```
+
+If you are using forge, then simply add to the server scheduling panel:
+
+![forge-schedule](https://user-images.githubusercontent.com/1636310/40587898-73fcbca0-61cd-11e8-8317-f1d24645bee5.png)
+
 
 ## Functions
 

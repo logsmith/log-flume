@@ -3,7 +3,7 @@
 Plugin Name: Log Flume
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Sync development media files to Amazon S3
-Version: 1.0.3
+Version: 1.1.0
 Author: David Darke
 Author URI: http://www.atomicsmash.co.uk
 */
